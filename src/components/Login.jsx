@@ -46,24 +46,23 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Colonne gauche */}
-      <div className="w-1/2 bg-blue-900 text-white flex flex-col justify-center items-center p-10">
-        <img src="/logo.png" alt="Stage Link" className="w-32 mb-6" />
-        <h1 className="text-4xl font-bold mb-4">Bienvenue !</h1>
-        <p className="text-lg text-center mb-6">
-          Connectez-vous pour accéder à vos stages, gérer vos missions et
-          collaborer avec vos encadrants. 🚀
-        </p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-dégradé to-white">
+      <div className="min-h-[92vh] w-full sm:w-[100%] max-w-7xl bg-white rounded-2xl shadow-lg flex mx-auto my-4">
+     
 
-      {/* Colonne droite */}
-      <div className="w-1/2 flex items-center justify-center bg-gradient-to-b from-blue-700 to-blue-500">
-        <div className="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md">
-          <div className="flex justify-center mb-4">
-            <FaLock className="text-blue-600 text-5xl bg-gray-200 p-3 rounded-full" />
+      {/* Colonne  */}
+      <div className="w-full flex items-center justify-center bg-bgcouleur p-4 sm:p-6 lg:p-4 ">
+        <div className="bg-white/10 backdrop-invert backdrop-opacity-10 p-6 sm:p-8 lg:p-10 rounded-3xl shadow-xl w-full max-w-md ">
+          <div className="flex items-center justify-center ">
+            <div className="relative w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg mb-4">
+              <img src="/STAGE LINK ICON.png" alt="" className="w-33 h-20" />
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-center mb-6 text-gray-700">
+           <h2 className="text-3xl font-bold text-center mb-6 text-white">
+            Plateforme de Gestion des Stages
+          </h2>
+
+          <h2 className="text-2xl font-bold text-center mb-6 text-white">
             Connexion
           </h2>
 
@@ -84,7 +83,7 @@ const Login = () => {
               >
                 <FaEnvelope className="text-gray-400 mr-2" />
                 <input
-                  className="flex-1 outline-none"
+                  className="flex-1 outline-none bg-gray-400 bg-opacity-50 text-white"
                   name="email"
                   type="email"
                   placeholder="Adresse mail"
@@ -106,7 +105,7 @@ const Login = () => {
               >
                 <FaLock className="text-gray-400 mr-2" />
                 <input
-                  className="flex-1 outline-none"
+                  className="flex-1 outline-none bg-gray-400 bg-opacity-50 text-white"
                   name="password"
                   type="password"
                   placeholder="Mot de passe"
@@ -122,13 +121,13 @@ const Login = () => {
             {/* Bouton */}
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition duration-300"
+              className="w-full bg-white text-inscrire p-3 rounded-xl font-Be Vietnam font-bold hover:bg-gray-400 transition duration-300"
             >
               Se connecter
             </button>
           </form>
 
-          <p className="text-center text-gray-500 mt-4">
+          <p className="text-center text-white mt-4">
             Pas encore de compte ?{" "}
             <a href="/register" className="text-blue-500 hover:underline">
               Inscrivez-vous
@@ -136,6 +135,7 @@ const Login = () => {
           </p>
         </div>
       </div>
+    </div>
     </div>
   );
 };

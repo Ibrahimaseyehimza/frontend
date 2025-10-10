@@ -316,41 +316,358 @@
 
 
 
-// NEW App.jsx
 
-// App.jsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // NEW App.jsx
+
+// // App.jsx
+// import React from "react";
+// import { Routes, Route, Navigate } from "react-router-dom";
+// import { AuthProvider, useAuth } from "./AuthContext";
+// import ProtectedRoute from "./components/ProtectedRoute";
+// import Login from "./components/Login";
+// import Register from "./components/Register";
+// import Unauthorized from "./components/Unauthorized";
+
+// // Dashboards
+// import ApprenantDashboard from "./components/dashboards/ApprenantDashboard";
+// import ChefDepartementDashboard from "./components/dashboards/ChefDepartementDashboard";
+// import ChefMetierDashboard from "./components/dashboards/ChefMetierDashboard";
+// import MaitreStageDashboard from "./components/dashboards/MaitreStagesDashboard";
+// import RHDashboard from "./components/dashboards/RHDashboard";
+
+// // Pages spécifiques Chef de département
+// import MetierList from "./components/pages/MetierList";
+// import ChefMetierList from "./components/pages/ChefMetierList";
+
+// import DashboardHome from "./components/pages/DashboardHome";
+// // import EntrepriseForm from "./components/pages/Entreprise";
+// import EntrepriseList from "./components/pages/EntrepriseList";
+// import RhList from "./components/pages/RhList";
+// import CampagneList from "./components/pages/CampagneList";
+// import ChefMetierCampagnes from "./components/pages/ChefMetierCampagnes";
+// import StageList from "./components/pages/chef_de_metier/StageList";
+// import MaitreStageList from "./components/pages/MaitreStageList";
+
+// import ChefMetierDashboard from "./components/pages/chef_de_metier/ChefMetierDashboard";
+// import ChefDepartementDashboard from "./components/dashboards/ChefDepartementDashboard";
+// import CampagneList from "./components/pages/chef_de_metier/CampagneList";
+// import EntrepriseList from "./components/pages/chef_de_metier/EntrepriseList";
+// import StageList from "./components/pages/chef_de_metier/StageList";
+// // import StageList from "./components/pages/chef_de_metier/StageList";
+// // ✅ PublicRoute : si déjà connecté → dashboard
+// const PublicRoute = ({ children }) => {
+//   const { isAuthenticated } = useAuth();
+//   return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
+// };
+
+// // Redirection automatique selon rôle
+// const DashboardRedirect = () => {
+//   const { user } = useAuth();
+
+//   const roleRoutes = {
+//     apprenant: "/dashboard/apprenant",
+//     chef_departement: "/dashboard/chef-departement",
+//     chef_metier: "/dashboard/chef-metier",
+//     maitre_stage: "/dashboard/maitre-stage",
+//     rh: "/dashboard/rh",
+//   };
+
+//   const redirectPath = roleRoutes[user?.role] || "/dashboard/apprenant";
+//   return <Navigate to={redirectPath} replace />;
+// };
+
+// function App() {
+//   return (
+//     <AuthProvider>
+//       <div className="App">
+//         <Routes>
+//           {/* Routes publiques */}
+//           <Route
+//             path="/login"
+//             element={
+//               <PublicRoute>
+//                 <Login />
+//               </PublicRoute>
+//             }
+//           />
+//           <Route
+//             path="/register"
+//             element={
+//               <PublicRoute>
+//                 <Register />
+//               </PublicRoute>
+//             }
+//           />
+
+//           {/* Dashboard redirection */}
+//           <Route
+//             path="/dashboard"
+//             element={
+//               <ProtectedRoute>
+//                 <DashboardRedirect />
+//               </ProtectedRoute>
+//             }
+//           />
+
+//           {/* Dashboard apprenant */}
+//           <Route
+//             path="/dashboard/apprenant"
+//             element={
+//               <ProtectedRoute allowedRoles={["apprenant"]}>
+//                 <ApprenantDashboard />
+//               </ProtectedRoute>
+//             }
+//           />
+
+//           {/* Dashboard chef de département avec sous-routes */}
+//           <Route
+//             path="/dashboard/chef-departement"
+//             element={
+//               <ProtectedRoute allowedRoles={["chef_departement"]}>
+//                 <ChefDepartementDashboard />
+//               </ProtectedRoute>
+//             }
+//           >
+//             <Route index element={<h2>📊 Vue générale du département</h2>} />
+//             <Route index element={<DashboardHome />} />
+//             <Route path="metiers" element={<MetierList />} />
+//             <Route path="utilisateurs" element={<ChefMetierList />} />
+//             {/* <Route path="entreprises" element={<h2>🏢 Liste des entreprises</h2>} /> */}
+//             {/* <Route path="entreprises" element={<h2> <EntrepriseForm /> </h2>} /> */}
+//             {/* <Route path="campagnes" element={<h2>📢 Campagnes</h2>} /> */}
+//             <Route
+//               path="/dashboard/chef-departement/campagnes"
+//               element={
+//                 <ProtectedRoute allowedRoles={["chef_departement"]}>
+//                   <CampagneList />
+//                 </ProtectedRoute>
+//               }
+//             />
+
+//             <Route path="stages" element={<h2>🎓 Stages</h2>} />
+//             <Route
+//               path="/dashboard/chef-departement/entreprises"
+//               element={
+//                 <ProtectedRoute allowedRoles={["chef_departement"]}>
+//                   <EntrepriseList />
+//                 </ProtectedRoute>
+//               }
+//             />
+//             <Route
+//               path="/dashboard/chef-departement/rh"
+//               element={
+//                 <ProtectedRoute allowedRoles={["chef_departement"]}>
+//                   <RhList />
+//                 </ProtectedRoute>
+//               }
+//             />
+//           </Route>
+
+//           {/* Autres dashboards */}
+//           {/* <Route
+//             path="/dashboard/chef-metier"
+//             element={
+//               <ProtectedRoute allowedRoles={["chef_metier"]}>
+//                 <ChefMetierDashboard />
+//               </ProtectedRoute>
+//             }
+//           /> */}
+//           <Route
+//             path="/dashboard/maitre-stage"
+//             element={
+//               <ProtectedRoute allowedRoles={["maitre_stage"]}>
+//                 <MaitreStageDashboard />
+//               </ProtectedRoute>
+//             }
+//           >
+//             {/* <Route index element={<h2>📊 Vue générale du métier</h2>} />
+//             <Route path="campagnes" element={<h2>Liste des campagnes</h2>} />
+//             <Route path="entreprises" element={<h2>Entreprises liées</h2>} />
+//             <Route path="apprenants" element={<h2>Apprenants du métier</h2>} />
+//             <Route path="stages" element={<h2>Stages en cours</h2>} /> */}
+
+
+//         </Route>
+//         {/* <Route
+//             path="/dashboard/chef-metier/campagnes"
+//             element={
+//               <ProtectedRoute allowedRoles={["chef_metier"]}>
+//                 <ChefMetierCampagnes />
+//               </ProtectedRoute>
+//             }
+//           /> */}
+
+
+//            <Routes>
+
+//         {/* ✅ Routes du Chef de Métier */}
+//         <Route path="/dashboard/chef-metier" element={<ChefMetierDashboard />}>
+//           <Route path="campagnes" element={<CampagneList />} />
+//           <Route path="entreprises" element={<EntrepriseList />} />
+//           <Route path="stages" element={<StageList />} />
+//         </Route>
+
+//         {/* ⚙️ Plus tard : on ajoutera les autres acteurs ici */}
+//         {/* <Route path="/dashboard/chef-departement" element={<ChefDepartementDashboard />} /> */}
+
+//       </Routes>
+
+//           <Route
+//             path="/dashboard/rh"
+//             element={
+//               <ProtectedRoute allowedRoles={["rh"]}>
+//                 <RHDashboard />
+//               </ProtectedRoute>
+//             }
+//           />
+//           <Route
+//             path="/stages"
+//             element={
+//               <ProtectedRoute allowedRoles={["chef_metier"]}>
+//                 <StageList />
+//               </ProtectedRoute>
+//             }
+//           />
+
+
+//           <Route
+//             path="/dashboard/rh/maitres"
+//             element={
+//               <ProtectedRoute allowedRoles={["rh"]}>
+//                 <MaitreStageList />
+//               </ProtectedRoute>
+//             }
+//           />
+
+
+
+
+//           {/* ✅ Accès interdit */}
+//           <Route path="/unauthorized" element={<Unauthorized />} />
+
+//           {/* ✅ Redirections */}
+//           <Route path="/" element={<Navigate to="/login" replace />} />
+//           <Route path="*" element={<Navigate to="/login" replace />} />
+//         </Routes>
+//       </div>
+//     </AuthProvider>
+//   );
+// }
+
+// export default App;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===========================
+// 🧠 Imports principaux
+// ===========================
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+
+// ===========================
+// 🔐 Pages d'authentification
+// ===========================
 import Login from "./components/Login";
 import Register from "./components/Register";
 import Unauthorized from "./components/Unauthorized";
 
-// Dashboards
+// ===========================
+// 🧭 Dashboards principaux
+// ===========================
 import ApprenantDashboard from "./components/dashboards/ApprenantDashboard";
 import ChefDepartementDashboard from "./components/dashboards/ChefDepartementDashboard";
 import ChefMetierDashboard from "./components/dashboards/ChefMetierDashboard";
 import MaitreStageDashboard from "./components/dashboards/MaitreStagesDashboard";
 import RHDashboard from "./components/dashboards/RHDashboard";
 
-// Pages spécifiques Chef de département
+// ===========================
+// 🏢 Pages Chef de Département
+// ===========================
 import MetierList from "./components/pages/MetierList";
 import ChefMetierList from "./components/pages/ChefMetierList";
-
-import DashboardHome from "./components/pages/DashboardHome";
-// import EntrepriseForm from "./components/pages/Entreprise";
 import EntrepriseList from "./components/pages/EntrepriseList";
 import RhList from "./components/pages/RhList";
 import CampagneList from "./components/pages/CampagneList";
 
-// ✅ PublicRoute : si déjà connecté → dashboard
+// ===========================
+// ⚙️ Pages Chef de Métier
+// ===========================
+import ChefMetierCampagneList from "./components/pages/chef_de_metier/CampagneList";
+import ChefMetierEntrepriseList from "./components/pages/chef_de_metier/EntrepriseList";
+import ChefMetierStageList from "./components/pages/chef_de_metier/StageList";
+
+// ===========================
+// 🎓 Pages Maître de Stage
+// ===========================
+import MaitreStageList from "./components/pages/MaitreStageList";
+import ImportEtudiant from "./components/pages/chef_de_metier/ImportEtudiant";
+// ===========================
+// 🎓 Pages ApprenantDashboard
+// ===========================
+// import ApprenantDashboard from "./components/dashboards/ApprenantDashboard";
+
+// ===========================
+// 🧭 PublicRoute : si déjà connecté → das  hboard
+// ===========================
 const PublicRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
 };
 
-// ✅ Redirection automatique selon rôle
+// ===========================
+// 🔁 Redirection automatique selon le rôle
+// ===========================
 const DashboardRedirect = () => {
   const { user } = useAuth();
 
@@ -366,12 +683,17 @@ const DashboardRedirect = () => {
   return <Navigate to={redirectPath} replace />;
 };
 
+// ===========================
+// 🚀 Application principale
+// ===========================
 function App() {
   return (
     <AuthProvider>
       <div className="App">
         <Routes>
-          {/* ✅ Routes publiques */}
+          {/* ===========================
+              ROUTES PUBLIQUES
+          =========================== */}
           <Route
             path="/login"
             element={
@@ -389,7 +711,9 @@ function App() {
             }
           />
 
-          {/* ✅ Dashboard redirection */}
+          {/* ===========================
+              REDIRECTION AUTOMATIQUE
+          =========================== */}
           <Route
             path="/dashboard"
             element={
@@ -399,7 +723,9 @@ function App() {
             }
           />
 
-          {/* ✅ Dashboard apprenant */}
+          {/* ===========================
+              APPRENANT
+          =========================== */}
           <Route
             path="/dashboard/apprenant"
             element={
@@ -409,7 +735,9 @@ function App() {
             }
           />
 
-          {/* ✅ Dashboard chef de département avec sous-routes */}
+          {/* ===========================
+              CHEF DE DÉPARTEMENT
+          =========================== */}
           <Route
             path="/dashboard/chef-departement"
             element={
@@ -417,43 +745,31 @@ function App() {
                 <ChefDepartementDashboard />
               </ProtectedRoute>
             }
-          >
-            <Route index element={<h2>📊 Vue générale du département</h2>} />
-            <Route index element={<DashboardHome />} />
-            <Route path="metiers" element={<MetierList />} />
-            <Route path="utilisateurs" element={<ChefMetierList />} />
-            {/* <Route path="entreprises" element={<h2>🏢 Liste des entreprises</h2>} /> */}
-            {/* <Route path="entreprises" element={<h2> <EntrepriseForm /> </h2>} /> */}
-            {/* <Route path="campagnes" element={<h2>📢 Campagnes</h2>} /> */}
-            <Route
-              path="/dashboard/chef-departement/campagnes"
-              element={
-                <ProtectedRoute allowedRoles={["chef_departement"]}>
-                  <CampagneList />
-                </ProtectedRoute>
-              }
-            />
+          />
+          <Route
+            path="/dashboard/chef-departement/metiers"
+            element={<MetierList />}
+          />
+          <Route
+            path="/dashboard/chef-departement/utilisateurs"
+            element={<ChefMetierList />}
+          />
+          <Route
+            path="/dashboard/chef-departement/entreprises"
+            element={<EntrepriseList />}
+          />
+          <Route
+            path="/dashboard/chef-departement/rh"
+            element={<RhList />}
+          />
+          <Route
+            path="/dashboard/chef-departement/campagnes"
+            element={<CampagneList />}
+          />
 
-            <Route path="stages" element={<h2>🎓 Stages</h2>} />
-            <Route
-              path="/dashboard/chef-departement/entreprises"
-              element={
-                <ProtectedRoute allowedRoles={["chef_departement"]}>
-                  <EntrepriseList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/chef-departement/rh"
-              element={
-                <ProtectedRoute allowedRoles={["chef_departement"]}>
-                  <RhList />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-
-          {/* ✅ Autres dashboards */}
+          {/* ===========================
+              CHEF DE MÉTIER
+          =========================== */}
           <Route
             path="/dashboard/chef-metier"
             element={
@@ -463,6 +779,26 @@ function App() {
             }
           />
           <Route
+            path="/dashboard/chef-metier/campagnes"
+            element={<ChefMetierCampagneList />}
+          />
+          <Route
+            path="/dashboard/chef-metier/entreprises"
+            element={<ChefMetierEntrepriseList />}
+          />
+          <Route
+            path="/dashboard/chef-metier/stages"
+            element={<ChefMetierStageList />}
+          />
+          <Route
+            path="/dashboard/chef-metier/apprenants"
+            element={<ImportEtudiant   />}
+          />
+
+          {/* ===========================
+              MAÎTRE DE STAGE
+          =========================== */}
+          <Route
             path="/dashboard/maitre-stage"
             element={
               <ProtectedRoute allowedRoles={["maitre_stage"]}>
@@ -470,6 +806,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/dashboard/rh/maitres"
+            element={<MaitreStageList />}
+          />
+
+          {/* ===========================
+              RESSOURCES HUMAINES (RH)
+          =========================== */}
           <Route
             path="/dashboard/rh"
             element={
@@ -479,10 +823,10 @@ function App() {
             }
           />
 
-          {/* ✅ Accès interdit */}
+          {/* ===========================
+              AUTRES ROUTES
+          =========================== */}
           <Route path="/unauthorized" element={<Unauthorized />} />
-
-          {/* ✅ Redirections */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
@@ -492,9 +836,6 @@ function App() {
 }
 
 export default App;
-
-
-
 
 
 

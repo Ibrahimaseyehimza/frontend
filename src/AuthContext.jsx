@@ -81,61 +81,98 @@ export { AuthContext };
 
 
 
-// // src/AuthContext.jsx
-// import React, { createContext, useContext, useState, useEffect } from "react";
 
-// const AuthContext = createContext();
+
+
+// // AuthContext.jsx
+// import React, { createContext, useContext, useState, useEffect } from "react";
+// import { useNavigate } from "react-router-dom";
+// import axios from "axios";
+
+// // const AuthContext = createContext();
+
+// // ✅ Créez ET exportez le contexte
+// export const AuthContext = createContext(); // Ajoutez "export" ici
+
 
 // export const AuthProvider = ({ children }) => {
 //   const [user, setUser] = useState(null);
-//   const [token, setToken] = useState(localStorage.getItem("token") || null);
+//   const [isAuthenticated, setIsAuthenticated] = useState(false);
+//   const [loading, setLoading] = useState(true);
+//   const navigate = useNavigate();
 
-//   const isAuthenticated = !!token;
-
+//   // Charger l'utilisateur au démarrage
 //   useEffect(() => {
-//     if (token && !user) {
-//       // ✅ récupérer l’utilisateur depuis le backend si nécessaire
-//       fetchUser();
-//     }
-//   }, [token]);
+//     const storedUser = localStorage.getItem("user");
+//     const storedToken = localStorage.getItem("token");
 
-//   const fetchUser = async () => {
+//     if (storedUser && storedToken) {
+//       setUser(JSON.parse(storedUser));
+//       setIsAuthenticated(true);
+//     }
+//     setLoading(false);
+//   }, []);
+
+//   const login = async (credentials) => {
 //     try {
-//       const res = await fetch("http://127.0.0.1:8000/api/user", {
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//         },
-//       });
-//       if (res.ok) {
-//         const data = await res.json();
-//         setUser(data);
-//       } else {
-//         logout();
-//       }
-//     } catch (err) {
-//       console.error("Erreur fetch user:", err);
-//       logout();
-//     }
-//   };
+//       const response = await axios.post(
+//         "http://127.0.0.1:8000/api/v1/login",
+//         credentials
+//       );
 
-//   const login = (data) => {
-//     setToken(data.token);
-//     setUser(data.user);
-//     localStorage.setItem("token", data.token);
+//       const { user, token, must_change_password } = response.data.data;
+
+//       console.log("Login avec données:", response.data.data);
+
+//       // ✅ SAUVEGARDER LE TOKEN ET L'UTILISATEUR
+//       localStorage.setItem("token", token);
+//       localStorage.setItem("user", JSON.stringify(user));
+
+//       setUser(user);
+//       setIsAuthenticated(true);
+
+//       // Redirection selon le rôle
+//       const roleRoutes = {
+//         apprenant: "/dashboard/apprenant",
+//         chef_departement: "/dashboard/chef-departement",
+//         chef_metier: "/dashboard/chef-metier",
+//         maitre_stage: "/dashboard/maitre-stage",
+//         rh: "/dashboard/rh",
+//       };
+
+//       const redirectPath = roleRoutes[user.role] || "/dashboard/apprenant";
+//       console.log("Redirection vers:", redirectPath, "pour le rôle:", user.role);
+//       navigate(redirectPath);
+
+//       return { success: true, must_change_password };
+//     } catch (error) {
+//       console.error("Erreur de connexion:", error);
+//       return {
+//         success: false,
+//         message: error.response?.data?.message || "Erreur de connexion",
+//       };
+//     }
 //   };
 
 //   const logout = () => {
-//     setToken(null);
-//     setUser(null);
+//     // ✅ SUPPRIMER LE TOKEN ET L'UTILISATEUR
 //     localStorage.removeItem("token");
+//     localStorage.removeItem("user");
+//     setUser(null);
+//     setIsAuthenticated(false);
+//     navigate("/login");
 //   };
 
 //   return (
-//     <AuthContext.Provider value={{ user, token, isAuthenticated, login, logout }}>
+//     <AuthContext.Provider value={{ user, isAuthenticated, loading, login, logout }}>
 //       {children}
 //     </AuthContext.Provider>
 //   );
 // };
 
 // export const useAuth = () => useContext(AuthContext);
+
+
+
+
 

@@ -652,13 +652,9 @@ import ChefMetierStageList from "./components/pages/chef_de_metier/StageList";
 // ===========================
 import MaitreStageList from "./components/pages/MaitreStageList";
 import ImportEtudiant from "./components/pages/chef_de_metier/ImportEtudiant";
-// ===========================
-// 🎓 Pages ApprenantDashboard
-// ===========================
-// import ApprenantDashboard from "./components/dashboards/ApprenantDashboard";
 
 // ===========================
-// 🧭 PublicRoute : si déjà connecté → das  hboard
+// 🧭 PublicRoute : si déjà connecté → dashboard
 // ===========================
 const PublicRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -736,7 +732,7 @@ function App() {
           />
 
           {/* ===========================
-              CHEF DE DÉPARTEMENT
+              CHEF DE DÉPARTEMENT (CORRIGÉ)
           =========================== */}
           <Route
             path="/dashboard/chef-departement"
@@ -745,27 +741,17 @@ function App() {
                 <ChefDepartementDashboard />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/dashboard/chef-departement/metiers"
-            element={<MetierList />}
-          />
-          <Route
-            path="/dashboard/chef-departement/utilisateurs"
-            element={<ChefMetierList />}
-          />
-          <Route
-            path="/dashboard/chef-departement/entreprises"
-            element={<EntrepriseList />}
-          />
-          <Route
-            path="/dashboard/chef-departement/rh"
-            element={<RhList />}
-          />
-          <Route
-            path="/dashboard/chef-departement/campagnes"
-            element={<CampagneList />}
-          />
+          >
+            {/* Route index pour le tableau de bord principal */}
+            <Route index element={<div className="p-6"><h2 className="text-2xl font-bold">Tableau de bord Chef de Département</h2></div>} />
+            
+            {/* Routes imbriquées */}
+            <Route path="metiers" element={<MetierList />} />
+            <Route path="utilisateurs" element={<ChefMetierList />} />
+            <Route path="entreprises" element={<EntrepriseList />} />
+            <Route path="rh" element={<RhList />} />
+            <Route path="campagnes" element={<CampagneList />} />
+          </Route>
 
           {/* ===========================
               CHEF DE MÉTIER
@@ -777,23 +763,12 @@ function App() {
                 <ChefMetierDashboard />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/dashboard/chef-metier/campagnes"
-            element={<ChefMetierCampagneList />}
-          />
-          <Route
-            path="/dashboard/chef-metier/entreprises"
-            element={<ChefMetierEntrepriseList />}
-          />
-          <Route
-            path="/dashboard/chef-metier/stages"
-            element={<ChefMetierStageList />}
-          />
-          <Route
-            path="/dashboard/chef-metier/apprenants"
-            element={<ImportEtudiant   />}
-          />
+          >
+            <Route path="campagnes" element={<ChefMetierCampagneList />} />
+            <Route path="entreprises" element={<ChefMetierEntrepriseList />} />
+            <Route path="stages" element={<ChefMetierStageList />} />
+            <Route path="apprenants" element={<ImportEtudiant />} />
+          </Route>
 
           {/* ===========================
               MAÎTRE DE STAGE
@@ -836,8 +811,6 @@ function App() {
 }
 
 export default App;
-
-
 
 
 

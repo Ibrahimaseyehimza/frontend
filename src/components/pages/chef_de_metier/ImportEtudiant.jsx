@@ -1,78 +1,29 @@
-// import React, { useState } from "react";
-// import api from "../../../api/axios";
-
-// const ImportEtudiant = () => {
-//   const [file, setFile] = useState(null);
-
-//   const handleFileChange = (e) => setFile(e.target.files[0]);
-
-//   const handleUpload = async (e) => {
-//     e.preventDefault();
-//     const formData = new FormData();
-//     formData.append("file", file);
-
-//     try {
-//       await api.post("/chef-metier/v1/etudiants/import", formData, {
-//         headers: { "Content-Type": "multipart/form-data" },
-//       });
-//       alert("Importation réussie ✅");
-//     } catch (err) {
-//       console.error(err);
-//       alert("Erreur d'importation ❌");
-//     }
-//   };
-
-//   return (
-//     <div className="p-6 bg-white shadow rounded">
-//       <h2 className="text-2xl font-bold mb-4">Importer des étudiants</h2>
-//       <form onSubmit={handleUpload}>
-//         <input type="file" accept=".xlsx,.csv" onChange={handleFileChange} required />
-//         <button
-//           type="submit"
-//           className="ml-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-//         >
-//           Importer
-//         </button>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default ImportEtudiant;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import api from "../../../api/axios";
+import { FiUpload, FiDownload, FiSearch, FiRefreshCw, FiUser, FiMail, FiBook } from "react-icons/fi";
+import { BsFileEarmarkSpreadsheet, BsCalendar3 } from "react-icons/bs";
+import { RiDeleteBin6Line } from "react-icons/ri";
+import { FaPen } from "react-icons/fa";
 
 const ImportEtudiant = () => {
   const [file, setFile] = useState(null);
   const [etudiants, setEtudiants] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [metierFilter, setMetierFilter] = useState("all");
+  
+  // Utilisation de useRef au lieu de document.getElementById
+  const fileInputRef = useRef(null);
 
-  // Charger les étudiants au montage du composant
   useEffect(() => {
     fetchEtudiants();
   }, []);
 
-  // Récupérer la liste des étudiants
   const fetchEtudiants = async () => {
     try {
       setLoading(true);
       const response = await api.get("/chef-metier/v1/apprenants/");
-      setEtudiants(response.data.data);
+      setEtudiants(response.data.data || []);
     } catch (err) {
       console.error("Erreur lors de la récupération:", err);
     } finally {
@@ -80,12 +31,16 @@ const ImportEtudiant = () => {
     }
   };
 
-  const handleFileChange = (e) => setFile(e.target.files[0]);
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    setFile(selectedFile);
+  };
 
   const handleUpload = async (e) => {
     e.preventDefault();
+    
     if (!file) {
-      alert("Veuillez sélectionner un fichier");
+      alert("⚠️ Veuillez sélectionner un fichier");
       return;
     }
 
@@ -94,116 +49,375 @@ const ImportEtudiant = () => {
 
     try {
       setLoading(true);
-      await api.post("/chef-metier/v1/apprenants/import", formData, {
+      const response = await api.post("/chef-metier/v1/apprenants/import", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      alert("Importation réussie ✅");
+      
+      console.log("Réponse import:", response.data);
+      
+      // Message détaillé avec les stats
+      const stats = response.data.stats;
+      if (stats) {
+        alert(`✅ Importation terminée !\n\n` +
+              `✔️ Importés: ${stats.imported}\n` +
+              `⚠️ Ignorés (doublons): ${stats.skipped}\n` +
+              `📊 Total: ${stats.total}`);
+      } else {
+        alert("✅ Importation réussie !");
+      }
+      
       setFile(null);
-      // Recharger la liste après l'import
-      fetchEtudiants();
+      
+      // Reset input file avec useRef
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      
+      // Recharger la liste
+      await fetchEtudiants();
+      
     } catch (err) {
-      console.error(err);
-      alert("Erreur d'importation ❌");
+      console.error("Erreur complète:", err);
+      console.error("Réponse erreur:", err.response?.data);
+      
+      let errorMessage = "Erreur inconnue";
+      
+      if (err.response?.data?.errors) {
+        // Erreurs de validation Excel
+        const errors = err.response.data.errors;
+        if (Array.isArray(errors)) {
+          errorMessage = errors.map(e => `Ligne ${e.row}: ${e.errors.join(', ')}`).join('\n');
+        } else {
+          errorMessage = JSON.stringify(errors);
+        }
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      alert("❌ Erreur lors de l'importation :\n\n" + errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRemoveFile = () => {
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Filtrer les étudiants
+  const filteredEtudiants = etudiants.filter((etudiant) => {
+    const matchSearch =
+      etudiant.matricule?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      etudiant.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      etudiant.prenom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      etudiant.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchMetier =
+      metierFilter === "all" || etudiant.metier?.nom === metierFilter;
+
+    return matchSearch && matchMetier;
+  });
+
+  // Obtenir la liste unique des métiers
+  const metiers = [...new Set(etudiants.map((e) => e.metier?.nom).filter(Boolean))];
+
+  // Statistiques
+  const stats = {
+    total: etudiants.length,
+    parMetier: metiers.length,
+    recent: etudiants.filter(
+      (e) => new Date(e.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    ).length,
+  };
+
+  if (loading && etudiants.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
+          <p className="mt-6 text-xl text-gray-600 font-medium">
+            Chargement des étudiants...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
+      {/* En-tête */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">
+          Gestion des Étudiants
+        </h1>
+        <p className="text-gray-600 mt-1">
+          Importez et gérez les étudiants par fichier Excel ou CSV
+        </p>
+      </div>
+
+      {/* Statistiques */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="bg-white p-6 rounded-lg shadow text-center">
+          <div className="text-4xl font-bold text-blue-600">{stats.total}</div>
+          <div className="text-gray-600 mt-2">Total Étudiants</div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow text-center">
+          <div className="text-4xl font-bold text-green-600">{stats.parMetier}</div>
+          <div className="text-gray-600 mt-2">Métiers Différents</div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow text-center">
+          <div className="text-4xl font-bold text-purple-600">{stats.recent}</div>
+          <div className="text-gray-600 mt-2">Ajoutés cette semaine</div>
+        </div>
+      </div>
+
       {/* Section Import */}
-      <div className="bg-white shadow rounded p-6 mb-6">
-        <h2 className="text-2xl font-bold mb-4">Importer des étudiants</h2>
-        <form onSubmit={handleUpload} className="flex items-center gap-4">
-          <input
-            type="file"
-            accept=".xlsx,.csv"
-            onChange={handleFileChange}
-            className="border rounded px-3 py-2"
-            required
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {loading ? "Importation..." : "Importer"}
-          </button>
+      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <FiUpload className="text-blue-600" size={24} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">
+              Importer des étudiants
+            </h2>
+            <p className="text-sm text-gray-600">
+              Formats acceptés : .xlsx, .csv
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleUpload} className="space-y-4">
+          {/* Zone de dépôt de fichier */}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition-colors">
+            <div className="flex flex-col items-center justify-center text-center">
+              <BsFileEarmarkSpreadsheet className="text-gray-400 mb-3" size={48} />
+              <label
+                htmlFor="file-input"
+                className="cursor-pointer text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Cliquez pour sélectionner un fichier
+              </label>
+              <input
+                id="file-input"
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.csv"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                ou glissez-déposez votre fichier ici
+              </p>
+            </div>
+
+            {file && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BsFileEarmarkSpreadsheet className="text-blue-600" size={20} />
+                  <span className="text-sm font-medium text-gray-700">
+                    {file.name}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    ({(file.size / 1024).toFixed(2)} KB)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Boutons d'action */}
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={loading || !file}
+              className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2 transition-colors"
+            >
+              <FiUpload size={20} />
+              {loading ? "Importation en cours..." : "Importer le fichier"}
+            </button>
+            <a
+              href={`${api.defaults.baseURL}/chef-metier/v1/apprenants/template`}
+              download
+              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium flex items-center justify-center gap-2 transition-colors"
+            >
+              <FiDownload size={20} />
+              Télécharger modèle
+            </a>
+          </div>
         </form>
       </div>
 
+      {/* Filtres et Recherche */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Rechercher par matricule, nom, prénom ou email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <select
+            value={metierFilter}
+            onChange={(e) => setMetierFilter(e.target.value)}
+            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">Tous les métiers</option>
+            {metiers.map((metier) => (
+              <option key={metier} value={metier}>
+                {metier}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Section Liste */}
-      <div className="bg-white shadow rounded p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">
-            Liste des étudiants ({etudiants.length})
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">
+            Liste des étudiants ({filteredEtudiants.length})
           </h2>
           <button
             onClick={fetchEtudiants}
-            className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+            disabled={loading}
+            className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200 font-medium flex items-center gap-2 transition-colors disabled:opacity-50"
           >
-            🔄 Actualiser
+            <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
+            Actualiser
           </button>
         </div>
 
-        {loading ? (
-          <p className="text-center py-8">Chargement...</p>
-        ) : etudiants.length === 0 ? (
-          <p className="text-center py-8 text-gray-500">
-            Aucun étudiant importé
-          </p>
+        {filteredEtudiants.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">👨‍🎓</div>
+            <p className="text-xl text-gray-500 font-semibold">
+              {searchTerm || metierFilter !== "all"
+                ? "Aucun étudiant ne correspond à votre recherche"
+                : "Aucun étudiant importé"}
+            </p>
+            <p className="text-gray-400 mt-2">
+              {!searchTerm && metierFilter === "all" && "Importez votre premier fichier d'étudiants"}
+            </p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Matricule
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Nom
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Nom complet
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Prénom
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Métier
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date d'ajout
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {etudiants.map((etudiant) => (
-                  <tr key={etudiant.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {etudiant.matricule}
+                {filteredEtudiants.map((etudiant) => (
+                  <tr key={etudiant.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <FiUser className="text-blue-600" size={20} />
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {etudiant.matricule}
+                        </span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {etudiant.name}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {etudiant.name} {etudiant.prenom}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {etudiant.prenom}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <FiMail className="mr-2 text-gray-400" size={16} />
+                        {etudiant.email}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {etudiant.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {etudiant.metier?.nom || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(etudiant.created_at).toLocaleDateString(
-                        "fr-FR"
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {etudiant.metier?.nom ? (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          <FiBook className="mr-1" size={12} />
+                          {etudiant.metier.nom}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-sm">N/A</span>
                       )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex items-center">
+                        <BsCalendar3 className="mr-2 text-gray-400" size={14} />
+                        {new Date(etudiant.created_at).toLocaleDateString("fr-FR")}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex gap-2">
+                        <button
+                          className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded transition-colors"
+                          title="Modifier"
+                        >
+                          <FaPen size={14} />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded transition-colors"
+                          title="Supprimer"
+                        >
+                          <RiDeleteBin6Line size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {filteredEtudiants.length > 0 && (
+          <div className="mt-6 flex justify-between items-center">
+            <p className="text-sm text-gray-600">
+              Affichage de {filteredEtudiants.length} étudiant(s) sur {etudiants.length} au total
+            </p>
+            <div className="flex gap-2">
+              <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                Précédent
+              </button>
+              <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                Suivant
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -22,7 +22,8 @@ const ImportEtudiant = () => {
   const fetchEtudiants = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/chef-metier/v1/apprenants/");
+      // const response = await api.get("/chef-metier/v1/apprenants");
+      const response = await api.get("/chef-metier/v1/apprenants");
       setEtudiants(response.data.data || []);
     } catch (err) {
       console.error("Erreur lors de la récupération:", err);

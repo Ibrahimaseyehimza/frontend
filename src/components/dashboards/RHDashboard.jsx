@@ -3,14 +3,13 @@ import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
 import api from "../../api/axios";
-import { IoHomeOutline } from "react-icons/io5";
+import { IoHomeOutline, IoClose } from "react-icons/io5";
 import { FaRegUser } from "react-icons/fa6";
 import { TbBrandCampaignmonitor } from "react-icons/tb";
 import { SlPeople } from "react-icons/sl";
 import { BsPersonWorkspace } from "react-icons/bs";
 import { FiLogOut, FiSearch, FiSettings, FiUser } from "react-icons/fi";
 import { HiMenuAlt3 } from "react-icons/hi";
-import { IoClose } from "react-icons/io5";
 
 // Composant Stat Card
 const StatCard = ({ title, value, subtitle, icon: Icon, iconBg }) => (
@@ -37,6 +36,8 @@ const TableauDeBordRH = () => {
     stagesEnCours: 0,
     maitresStage: 0,
     etudiants: 0,
+    tauxAffectation: 0,
+    dureeMoyenne: 0
   });
 
   const [loading, setLoading] = useState(true);
@@ -51,23 +52,144 @@ const TableauDeBordRH = () => {
       setLoading(true);
       setError(null);
 
-      // TODO: Adapter ces appels API selon ta structure
-      // const [stagesResponse, maitresResponse] = await Promise.all([
-      //   api.get("/stages"),
-      //   api.get("/maitres-stage")
-      // ]);
+      // Endpoints possibles pour les étudiants selon les permissions
+      const etudiantsEndpoints = [
+        "/apprenants",
+        "/utilisateurs?role=apprenant",
+        "/etudiants",
+        "/users?role=apprenant"
+      ];
+      
+      let etudiantsPromise = api.get(etudiantsEndpoints[0]).catch(() => 
+        api.get(etudiantsEndpoints[1]).catch(() => 
+          api.get(etudiantsEndpoints[2]).catch(() => 
+            api.get(etudiantsEndpoints[3]).catch(() => ({ data: [] }))
+          )
+        )
+      );
 
-      // Pour l'instant, données fictives
+      // Récupération parallèle des données
+      const responses = await Promise.allSettled([
+        api.get("/campagnes"),
+        api.get("/maitres"),
+        api.get("/entreprises"),
+        etudiantsPromise
+      ]);
+
+      // Extraction des campagnes
+      const campagnes = responses[0].status === 'fulfilled' 
+        ? (responses[0].value?.data?.data || []) 
+        : [];
+
+      // Extraction des maîtres de stage
+      const maitres = responses[1].status === 'fulfilled' 
+        ? (responses[1].value?.data?.data || []) 
+        : [];
+
+      // Extraction des entreprises
+      const entreprises = responses[2].status === 'fulfilled' 
+        ? (responses[2].value?.data?.data || []) 
+        : [];
+
+      // Extraction des étudiants
+      let etudiantsData = [];
+      if (responses[3].status === 'fulfilled') {
+        const etudiantsResponse = responses[3].value?.data;
+        
+        if (Array.isArray(etudiantsResponse)) {
+          etudiantsData = etudiantsResponse;
+        } else if (etudiantsResponse?.data && Array.isArray(etudiantsResponse.data)) {
+          etudiantsData = etudiantsResponse.data;
+        } else if (etudiantsResponse?.apprenants && Array.isArray(etudiantsResponse.apprenants)) {
+          etudiantsData = etudiantsResponse.apprenants;
+        } else if (etudiantsResponse?.utilisateurs && Array.isArray(etudiantsResponse.utilisateurs)) {
+          etudiantsData = etudiantsResponse.utilisateurs;
+        }
+        
+        console.log("✅ Étudiants récupérés:", etudiantsData.length);
+      } else {
+        console.warn("⚠️ Impossible de récupérer les étudiants directement");
+        
+        // Alternative : Compter depuis les campagnes
+        const etudiantsSet = new Set();
+        campagnes.forEach(campagne => {
+          if (campagne.etudiants && Array.isArray(campagne.etudiants)) {
+            campagne.etudiants.forEach(etudiant => {
+              if (etudiant.id) etudiantsSet.add(etudiant.id);
+            });
+          }
+          if (campagne.apprenants && Array.isArray(campagne.apprenants)) {
+            campagne.apprenants.forEach(apprenant => {
+              if (apprenant.id) etudiantsSet.add(apprenant.id);
+            });
+          }
+        });
+        etudiantsData = Array.from(etudiantsSet).map(id => ({ id }));
+        console.log("📊 Étudiants comptés depuis les campagnes:", etudiantsData.length);
+      }
+
+      // Calcul des statistiques
+      const totalStages = campagnes.length;
+      
+      const stagesEnCours = campagnes.filter(c => {
+        return c.date_fin && new Date(c.date_fin) > new Date();
+      }).length;
+
+      const nombreMaitres = maitres.length;
+      const nombreEtudiants = etudiantsData.length;
+
+      // Calcul du taux d'affectation
+      let tauxAffectation = 0;
+      if (nombreEtudiants > 0) {
+        const etudiantsAffectes = new Set();
+        campagnes.forEach(campagne => {
+          if (campagne.etudiants && Array.isArray(campagne.etudiants)) {
+            campagne.etudiants.forEach(etudiant => {
+              if (etudiant.id) etudiantsAffectes.add(etudiant.id);
+            });
+          }
+        });
+        tauxAffectation = Math.round((etudiantsAffectes.size / nombreEtudiants) * 100);
+      }
+
+      // Calcul de la durée moyenne
+      let dureeMoyenne = 0;
+      if (campagnes.length > 0) {
+        const durees = campagnes
+          .filter(c => c.date_debut && c.date_fin)
+          .map(c => {
+            const debut = new Date(c.date_debut);
+            const fin = new Date(c.date_fin);
+            const diffTime = Math.abs(fin - debut);
+            const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30);
+            return diffMonths;
+          });
+        
+        if (durees.length > 0) {
+          dureeMoyenne = durees.reduce((a, b) => a + b, 0) / durees.length;
+        }
+      }
+
       setStats({
-        totalStages: 45,
-        stagesEnCours: 28,
-        maitresStage: 12,
-        etudiants: 150,
+        totalStages,
+        stagesEnCours,
+        maitresStage: nombreMaitres,
+        etudiants: nombreEtudiants,
+        tauxAffectation,
+        dureeMoyenne: dureeMoyenne.toFixed(1)
       });
 
-      console.log("📊 Données RH chargées");
+      console.log("📊 Données RH chargées:", {
+        totalStages,
+        stagesEnCours,
+        nombreMaitres,
+        nombreEtudiants,
+        tauxAffectation: `${tauxAffectation}%`,
+        dureeMoyenne: `${dureeMoyenne.toFixed(1)} mois`
+      });
+
     } catch (err) {
-      console.error("Erreur lors du chargement des données RH:", err);
+      console.error("❌ Erreur lors du chargement des données RH:", err);
       setError("Impossible de charger les données");
     } finally {
       setLoading(false);
@@ -152,7 +274,7 @@ const TableauDeBordRH = () => {
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <NavLink
-            to="maitres"
+            to="maitresrh"
             className="block p-6 bg-blue-50 hover:bg-blue-100 rounded-2xl text-left transition-all hover:shadow-md"
           >
             <div className="text-blue-600 mb-3">
@@ -198,13 +320,24 @@ const TableauDeBordRH = () => {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-          <span className="mr-2">📊</span>
-          Aperçu RH
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center">
+            <span className="mr-2">📊</span>
+            Aperçu RH
+          </h3>
+          <button
+            onClick={fetchRHData}
+            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Actualiser
+          </button>
+        </div>
         <div className="grid grid-cols-1 gap-4">
           <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-xl">
-            <p className="text-3xl font-bold text-green-600 mb-1">92%</p>
+            <p className="text-3xl font-bold text-green-600 mb-1">{stats.tauxAffectation}%</p>
             <p className="text-sm text-gray-600">Taux d'affectation</p>
           </div>
           <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl">
@@ -212,8 +345,8 @@ const TableauDeBordRH = () => {
             <p className="text-sm text-gray-600">Maîtres actifs</p>
           </div>
           <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-xl">
-            <p className="text-3xl font-bold text-purple-600 mb-1">{stats.stagesEnCours}</p>
-            <p className="text-sm text-gray-600">Stages actuellement en cours</p>
+            <p className="text-3xl font-bold text-purple-600 mb-1">{stats.dureeMoyenne} mois</p>
+            <p className="text-sm text-gray-600">Durée moyenne des stages</p>
           </div>
         </div>
       </div>
@@ -280,14 +413,13 @@ const RHDashboard = () => {
         ></div>
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed lg:static inset-y-0 left-0 z-30 w-64 bg-white text-black flex flex-col shadow-xl transform transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
-        <div className="relative p-6 text-2xl bg-dégradé font-bold shadow border-b border-blue-500 h-14 flex items-center justify-center">
-          <img src="/STAGE LINK BLANC.png" alt="Stage Link" className="h-16 sm:h-20" />
+        <div className="relative p-6 text-2xl bg-dégradé font-bold shadow border-b border-blue-500 h-16 flex items-center justify-center">
+          <img src="/STAGE LINK BLANC.png" alt="Stage Link" className="h-12 sm:h-16" />
           <button
             onClick={closeSidebar}
             className="absolute right-4 top-1/2 -translate-y-1/2 lg:hidden text-white hover:text-gray-200"
@@ -297,65 +429,28 @@ const RHDashboard = () => {
         </div>
 
         <nav className="flex-1 p-3 sm:p-4 space-y-1 sm:space-y-2 overflow-y-auto">
-          <NavLink
-            to="."
-            end
-            className={({ isActive }) =>
-              `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive
-                  ? "bg-blue-100 text-blue-600 shadow-md"
-                  : "hover:bg-blue-100 hover:text-blue-600"
-              }`
-            }
-          >
+          <NavLink to="." end className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-600 shadow-md" : "hover:bg-blue-100 hover:text-blue-600"}`}>
             <div className="flex items-center">
               <IoHomeOutline className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Tableau de bord</span>
             </div>
           </NavLink>
 
-          <NavLink
-            to="maitres"
-            className={({ isActive }) =>
-              `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive
-                  ? "bg-blue-100 text-blue-600 shadow-md"
-                  : "hover:bg-blue-100 hover:text-blue-600"
-              }`
-            }
-          >
+          <NavLink to="maitresrh" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-600 shadow-md" : "hover:bg-blue-100 hover:text-blue-600"}`}>
             <div className="flex items-center">
               <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Maîtres de Stage</span>
             </div>
           </NavLink>
 
-          <NavLink
-            to="campagnes"
-            className={({ isActive }) =>
-              `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive
-                  ? "bg-blue-100 text-blue-600 shadow-md"
-                  : "hover:bg-blue-100 hover:text-blue-600"
-              }`
-            }
-          >
+          <NavLink to="campagnes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-600 shadow-md" : "hover:bg-blue-100 hover:text-blue-600"}`}>
             <div className="flex items-center">
               <TbBrandCampaignmonitor className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Campagnes</span>
             </div>
           </NavLink>
 
-          <NavLink
-            to="stages"
-            className={({ isActive }) =>
-              `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive
-                  ? "bg-blue-100 text-blue-600 shadow-md"
-                  : "hover:bg-blue-100 hover:text-blue-600"
-              }`
-            }
-          >
+          <NavLink to="stages" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-600 shadow-md" : "hover:bg-blue-100 hover:text-blue-600"}`}>
             <div className="flex items-center">
               <SlPeople className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Stages</span>
@@ -364,14 +459,9 @@ const RHDashboard = () => {
         </nav>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 flex flex-col w-full lg:w-auto overflow-hidden">
-        {/* Header */}
         <header className="bg-white shadow-sm p-3 sm:p-4 flex items-center gap-4 sticky top-0 z-10">
-          <button
-            onClick={toggleSidebar}
-            className="lg:hidden text-gray-700 hover:text-gray-900 flex-shrink-0"
-          >
+          <button onClick={toggleSidebar} className="lg:hidden text-gray-700 hover:text-gray-900 flex-shrink-0">
             <HiMenuAlt3 size={28} />
           </button>
 
@@ -408,31 +498,16 @@ const RHDashboard = () => {
                   <p className="text-sm font-semibold text-gray-800">{user?.name}</p>
                   <p className="text-xs text-gray-500">{user?.email}</p>
                 </div>
-
-                <button
-                  onClick={() => setShowProfileMenu(false)}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
-                >
+                <button onClick={() => setShowProfileMenu(false)} className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3">
                   <FiUser size={18} />
                   <span>Mon Profil</span>
                 </button>
-
-                <button
-                  onClick={() => setShowProfileMenu(false)}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
-                >
+                <button onClick={() => setShowProfileMenu(false)} className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3">
                   <FiSettings size={18} />
                   <span>Paramètres</span>
                 </button>
-
                 <div className="border-t border-gray-200 mt-2 pt-2">
-                  <button
-                    onClick={() => {
-                      setShowProfileMenu(false);
-                      handleLogout();
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3"
-                  >
+                  <button onClick={() => { setShowProfileMenu(false); handleLogout(); }} className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3">
                     <FiLogOut size={18} />
                     <span>Se déconnecter</span>
                   </button>
@@ -442,7 +517,6 @@ const RHDashboard = () => {
           </div>
         </header>
 
-        {/* Content */}
         <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-y-auto">
           {isHomePage ? <TableauDeBordRH /> : <Outlet />}
         </div>

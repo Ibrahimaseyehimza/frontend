@@ -13,7 +13,7 @@ import { BsBuilding, BsBriefcase } from "react-icons/bs";
 import { FaRegUser } from "react-icons/fa6";
 
 // Composant pour afficher les statistiques
-const StatCard = ({ title, value, subtitle, icon: Icon, iconBg }) => (
+const StatCard = ({ title, value, subtitle, icon: Icon, iconBg, trend }) => (
   <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
     <div className="flex items-start justify-between">
       <div className="flex-1">
@@ -25,6 +25,11 @@ const StatCard = ({ title, value, subtitle, icon: Icon, iconBg }) => (
         <Icon className="text-white" size={24} />
       </div>
     </div>
+    {trend && (
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <span className="text-xs text-green-600 font-medium">↗ {trend}</span>
+      </div>
+    )}
   </div>
 );
 
@@ -37,8 +42,12 @@ const TableauDeBordHome = () => {
     campagnesActives: 0,
     entreprisesPartenaires: 0,
     stagesConfirmes: 0,
+    apprenants: 0,
+    tauxPlacement: 0,
+    dureeMoyenne: 0
   });
   
+  const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -51,36 +60,199 @@ const TableauDeBordHome = () => {
       setLoading(true);
       setError(null);
       
-      // TODO: Récupérer le metier_id du chef connecté
+      // Récupération du metier_id du chef connecté
       const metierId = user?.metier_id;
       
-      if (!metierId) {
-        // Données par défaut si pas de métier
-        setStats({
-          totalCampagnes: 0,
-          campagnesActives: 0,
-          entreprisesPartenaires: 0,
-          stagesConfirmes: 0,
-        });
-        setLoading(false);
-        return;
-      }
-
-      // TODO: Adapter ces appels selon votre backend
-      // Exemple d'appels API à implémenter :
-      // const campagnesResponse = await api.get(`/metiers/${metierId}/campagnes`);
-      // const entreprisesResponse = await api.get(`/metiers/${metierId}/entreprises`);
+      console.log("👤 Chef de métier connecté:", {
+        name: user?.name,
+        metier_id: metierId
+      });
       
-      // Pour l'instant, données statiques pour le design
+      // Récupération des données avec gestion d'erreur individuelle
+      const responses = await Promise.allSettled([
+        api.get("/campagnes"),
+        api.get("/entreprises"),
+        api.get("/apprenants").catch(() => api.get("/utilisateurs?role=apprenant")),
+        api.get("/stages")
+      ]);
+      
+      // Extraction des campagnes
+      const toutesLesCampagnes = responses[0].status === 'fulfilled' 
+        ? (responses[0].value?.data?.data || []) 
+        : [];
+      
+      // Filtrer les campagnes par métier si metierId existe
+      const campagnes = metierId 
+        ? toutesLesCampagnes.filter(c => {
+            // Vérifier si la campagne est associée au métier du chef
+            if (c.metier_id === metierId) return true;
+            if (c.metiers && Array.isArray(c.metiers)) {
+              return c.metiers.some(m => m.id === metierId);
+            }
+            return false;
+          })
+        : toutesLesCampagnes;
+      
+      console.log("📊 Campagnes filtrées pour ce métier:", campagnes.length);
+      
+      // Extraction des entreprises
+      const toutesEntreprises = responses[1].status === 'fulfilled' 
+        ? (responses[1].value?.data?.data || []) 
+        : [];
+      
+      // Extraire les entreprises uniques liées aux campagnes du métier
+      const entreprisesSet = new Set();
+      campagnes.forEach(campagne => {
+        if (campagne.entreprises && Array.isArray(campagne.entreprises)) {
+          campagne.entreprises.forEach(ent => {
+            if (ent.id) entreprisesSet.add(ent.id);
+          });
+        }
+        if (campagne.entreprise_id) {
+          entreprisesSet.add(campagne.entreprise_id);
+        }
+      });
+      
+      const entreprisesPartenaires = entreprisesSet.size;
+      
+      // Extraction des apprenants
+      let apprenantsData = [];
+      if (responses[2].status === 'fulfilled') {
+        const apprenantsResponse = responses[2].value?.data;
+        if (Array.isArray(apprenantsResponse)) {
+          apprenantsData = apprenantsResponse;
+        } else if (apprenantsResponse?.data && Array.isArray(apprenantsResponse.data)) {
+          apprenantsData = apprenantsResponse.data;
+        }
+      }
+      
+      // Filtrer les apprenants par métier
+      const apprenantsDuMetier = metierId
+        ? apprenantsData.filter(a => a.metier_id === metierId)
+        : apprenantsData;
+      
+      // Extraction des stages
+      const tousLesStages = responses[3].status === 'fulfilled' 
+        ? (responses[3].value?.data?.data || []) 
+        : [];
+      
+      // Filtrer les stages par campagnes du métier
+      const campagnesIds = new Set(campagnes.map(c => c.id));
+      const stagesDuMetier = tousLesStages.filter(s => 
+        campagnesIds.has(s.campagne_id)
+      );
+      
+      // Calcul des statistiques
+      const totalCampagnes = campagnes.length;
+      
+      const campagnesActives = campagnes.filter(c => {
+        return c.date_fin && new Date(c.date_fin) > new Date();
+      }).length;
+      
+      // Stages confirmés (statut validé, confirmé, etc.)
+      const stagesConfirmes = stagesDuMetier.filter(s => 
+        s.statut && ['validé', 'confirmé', 'en_cours', 'actif'].includes(s.statut.toLowerCase())
+      ).length;
+      
+      // Calcul du taux de placement
+      let tauxPlacement = 0;
+      if (apprenantsDuMetier.length > 0) {
+        const apprenantsPlaces = new Set();
+        stagesDuMetier.forEach(stage => {
+          if (stage.apprenant_id) apprenantsPlaces.add(stage.apprenant_id);
+        });
+        tauxPlacement = Math.round((apprenantsPlaces.size / apprenantsDuMetier.length) * 100);
+      }
+      
+      // Calcul de la durée moyenne des stages
+      let dureeMoyenne = 0;
+      if (campagnes.length > 0) {
+        const durees = campagnes
+          .filter(c => c.date_debut && c.date_fin)
+          .map(c => {
+            const debut = new Date(c.date_debut);
+            const fin = new Date(c.date_fin);
+            const diffTime = Math.abs(fin - debut);
+            const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30);
+            return diffMonths;
+          });
+        
+        if (durees.length > 0) {
+          dureeMoyenne = (durees.reduce((a, b) => a + b, 0) / durees.length).toFixed(1);
+        }
+      }
+      
       setStats({
-        totalCampagnes: 8,
-        campagnesActives: 3,
-        entreprisesPartenaires: 15,
-        stagesConfirmes: 45,
+        totalCampagnes,
+        campagnesActives,
+        entreprisesPartenaires,
+        stagesConfirmes,
+        apprenants: apprenantsDuMetier.length,
+        tauxPlacement,
+        dureeMoyenne
+      });
+      
+      // Générer les activités récentes
+      const activities = [];
+      
+      // Dernières campagnes créées
+      const dernieresCampagnes = [...campagnes]
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 2);
+      
+      dernieresCampagnes.forEach(c => {
+        const daysAgo = Math.floor((new Date() - new Date(c.created_at)) / (1000 * 60 * 60 * 24));
+        activities.push({
+          type: 'campagne',
+          message: `Nouvelle campagne: ${c.nom || c.titre || 'Sans titre'}`,
+          time: daysAgo === 0 ? "Aujourd'hui" : `Il y a ${daysAgo} jour${daysAgo > 1 ? 's' : ''}`,
+          color: 'blue'
+        });
+      });
+      
+      // Derniers stages validés
+      const derniersStages = [...stagesDuMetier]
+        .filter(s => s.created_at)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 1);
+      
+      if (derniersStages.length > 0) {
+        const stage = derniersStages[0];
+        const daysAgo = Math.floor((new Date() - new Date(stage.created_at)) / (1000 * 60 * 60 * 24));
+        activities.push({
+          type: 'stage',
+          message: `Nouveau stage enregistré`,
+          time: daysAgo === 0 ? "Aujourd'hui" : `Il y a ${daysAgo} jour${daysAgo > 1 ? 's' : ''}`,
+          color: 'green'
+        });
+      }
+      
+      // Si pas assez d'activités, ajouter des données par défaut
+      if (activities.length === 0) {
+        activities.push(
+          {
+            type: 'info',
+            message: 'Bienvenue sur votre tableau de bord',
+            time: "Aujourd'hui",
+            color: 'purple'
+          }
+        );
+      }
+      
+      setRecentActivities(activities);
+      
+      console.log("📊 Statistiques Chef de Métier:", {
+        totalCampagnes,
+        campagnesActives,
+        entreprisesPartenaires,
+        stagesConfirmes,
+        apprenants: apprenantsDuMetier.length,
+        tauxPlacement: `${tauxPlacement}%`,
+        dureeMoyenne: `${dureeMoyenne} mois`
       });
       
     } catch (err) {
-      console.error("Erreur lors du chargement des données:", err);
+      console.error("❌ Erreur lors du chargement des données:", err);
       setError("Impossible de charger les données du tableau de bord");
     } finally {
       setLoading(false);
@@ -114,6 +286,16 @@ const TableauDeBordHome = () => {
     );
   }
 
+  const getActivityColor = (color) => {
+    const colors = {
+      blue: 'bg-blue-50',
+      green: 'bg-green-50',
+      purple: 'bg-purple-50',
+      orange: 'bg-orange-50'
+    };
+    return colors[color] || 'bg-gray-50';
+  };
+
   return (
     <div className="space-y-6">
       {/* Bannière de bienvenue */}
@@ -126,7 +308,7 @@ const TableauDeBordHome = () => {
           </p>
         </div>
         <div className="hidden md:block">
-          <img src="/LOGO EIT.png" alt="" className="h-20" />
+          <img src="/LOGO EIT.png" alt="Logo EIT" className="h-20" />
         </div>
       </div>
 
@@ -218,23 +400,33 @@ const TableauDeBordHome = () => {
       {/* Aperçu des activités */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-            <span className="mr-2">📋</span>
-            Activités Récentes
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center justify-between">
+            <span className="flex items-center">
+              <span className="mr-2">📋</span>
+              Activités Récentes
+            </span>
+            <button
+              onClick={fetchDashboardData}
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
           </h3>
           <div className="space-y-3">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-800">Nouvelle campagne créée</p>
-              <p className="text-xs text-gray-500 mt-1">Il y a 2 jours</p>
-            </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-800">5 étudiants placés</p>
-              <p className="text-xs text-gray-500 mt-1">Il y a 3 jours</p>
-            </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-800">Nouvelle entreprise partenaire</p>
-              <p className="text-xs text-gray-500 mt-1">Il y a 5 jours</p>
-            </div>
+            {recentActivities.length > 0 ? (
+              recentActivities.map((activity, index) => (
+                <div key={index} className={`p-4 ${getActivityColor(activity.color)} rounded-lg`}>
+                  <p className="text-sm font-medium text-gray-800">{activity.message}</p>
+                  <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                </div>
+              ))
+            ) : (
+              <div className="p-4 bg-gray-50 rounded-lg text-center">
+                <p className="text-sm text-gray-500">Aucune activité récente</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -245,15 +437,17 @@ const TableauDeBordHome = () => {
           </h3>
           <div className="grid grid-cols-1 gap-4">
             <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-xl">
-              <p className="text-3xl font-bold text-green-600 mb-1">92%</p>
+              <p className="text-3xl font-bold text-green-600 mb-1">{stats.tauxPlacement}%</p>
               <p className="text-sm text-gray-600">Taux de placement</p>
             </div>
             <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl">
-              <p className="text-3xl font-bold text-blue-600 mb-1">{stats.entreprisesPartenaires}</p>
-              <p className="text-sm text-gray-600">Entreprises actives</p>
+              <p className="text-3xl font-bold text-blue-600 mb-1">{stats.apprenants}</p>
+              <p className="text-sm text-gray-600">Apprenants dans le métier</p>
             </div>
             <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-xl">
-              <p className="text-3xl font-bold text-purple-600 mb-1">4.5 mois</p>
+              <p className="text-3xl font-bold text-purple-600 mb-1">
+                {stats.dureeMoyenne > 0 ? `${stats.dureeMoyenne} mois` : 'N/A'}
+              </p>
               <p className="text-sm text-gray-600">Durée moyenne des stages</p>
             </div>
           </div>
@@ -343,7 +537,7 @@ const ChefMetierDashboard = () => {
             end 
             className={({ isActive }) => 
               `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
+                isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"
               }`
             }
           >
@@ -357,7 +551,7 @@ const ChefMetierDashboard = () => {
             to="campagnes" 
             className={({ isActive }) => 
               `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
+                isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"
               }`
             }
           >
@@ -371,7 +565,7 @@ const ChefMetierDashboard = () => {
             to="entreprises" 
             className={({ isActive }) => 
               `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
+                isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"
               }`
             }
           >
@@ -385,7 +579,7 @@ const ChefMetierDashboard = () => {
             to="apprenants" 
             className={({ isActive }) => 
               `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
+                isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"
               }`
             }
           >
@@ -399,7 +593,7 @@ const ChefMetierDashboard = () => {
             to="stages" 
             className={({ isActive }) => 
               `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
+                isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"
               }`
             }
           >

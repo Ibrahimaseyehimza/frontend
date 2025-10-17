@@ -110,7 +110,7 @@ const RhList = () => {
       <form onSubmit={handleSubmit} className="space-y-4 mb-8">
         <input
           className="w-full p-2 border rounded"
-          name="name"
+          name="nom"
           placeholder="Nom"
           value={form.name}
           onChange={handleChange}

@@ -796,7 +796,10 @@ function App() {
                 <RHDashboard />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route path="maitresrh" element={<MaitreStageList />} />
+            
+          </Route>
 
           {/* ===========================
               AUTRES ROUTES

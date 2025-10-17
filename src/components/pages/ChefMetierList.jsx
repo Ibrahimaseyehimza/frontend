@@ -145,10 +145,10 @@ const ChefMetierList = () => {
     return colors[id % colors.length];
   };
 
-  const getInitials = (nom, prenom) => {
-    const n = nom?.charAt(0) || "";
+  const getInitials = (prenom, nom) => {
     const p = prenom?.charAt(0) || "";
-    return (n + p).toUpperCase() || "CM";
+    const n = nom?.charAt(0) || "";
+    return (n + p).toUpperCase() || "MC";
   };
 
   if (pageLoading) {

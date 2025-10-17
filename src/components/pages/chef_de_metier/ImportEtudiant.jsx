@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-// import api from "../../..//../api/axios";
 import api from "../../../api/axios";
-// importaxios from ".."
 import { FiUpload, FiDownload, FiSearch, FiRefreshCw, FiUser, FiMail, FiBook } from "react-icons/fi";
 import { BsFileEarmarkSpreadsheet, BsCalendar3 } from "react-icons/bs";
 import { RiDeleteBin6Line } from "react-icons/ri";
@@ -14,7 +12,6 @@ const ImportEtudiant = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [metierFilter, setMetierFilter] = useState("all");
   
-  // Utilisation de useRef au lieu de document.getElementById
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -24,9 +21,16 @@ const ImportEtudiant = () => {
   const fetchEtudiants = async () => {
     try {
       setLoading(true);
-      // const response = await api.get("/chef-metier/v1/apprenants");
       const response = await api.get("/chef-metier/v1/apprenants");
-      setEtudiants(response.data.data || []);
+      console.log("Réponse complète API:", response.data);
+      
+      // Essayer différentes structures de données
+      let data = response.data.data || response.data.apprenants || response.data || [];
+      
+      console.log("Données extraites:", data);
+      console.log("Nombre d'étudiants:", Array.isArray(data) ? data.length : 0);
+      
+      setEtudiants(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Erreur lors de la récupération:", err);
     } finally {
@@ -39,99 +43,78 @@ const ImportEtudiant = () => {
     setFile(selectedFile);
   };
 
-  // const handleUpload = async (e) => {
-  //   e.preventDefault();
-    
-  //   if (!file) {
-  //     alert("⚠️ Veuillez sélectionner un fichier");
-  //     return;
-  //   }
-
-  //   const formData = new FormData();
-  //   formData.append("file", file);
-
-  //   try {
-  //     setLoading(true);
-  //     const response = await api.post("/chef-metier/v1/apprenants/import", formData, {
-  //       headers: { "Content-Type": "multipart/form-data" },
-  //     });
-      
-  //     console.log("Réponse import:", response.data);
-      
-  //     // Message détaillé avec les stats
-  //     const stats = response.data.stats;
-  //     if (stats) {
-  //       alert(`✅ Importation terminée !\n\n` +
-  //             `✔️ Importés: ${stats.imported}\n` +
-  //             `⚠️ Ignorés (doublons): ${stats.skipped}\n` +
-  //             `📊 Total: ${stats.total}`);
-  //     } else {
-  //       alert("✅ Importation réussie !");
-  //     }
-      
-  //     setFile(null);
-      
-  //     // Reset input file avec useRef
-  //     if (fileInputRef.current) {
-  //       fileInputRef.current.value = "";
-  //     }
-      
-  //     // Recharger la liste
-  //     await fetchEtudiants();
-      
-  //   } catch (err) {
-  //     console.error("Erreur complète:", err);
-  //     console.error("Réponse erreur:", err.response?.data);
-      
-  //     let errorMessage = "Erreur inconnue";
-      
-  //     if (err.response?.data?.errors) {
-  //       // Erreurs de validation Excel
-  //       const errors = err.response.data.errors;
-  //       if (Array.isArray(errors)) {
-  //         errorMessage = errors.map(e => `Ligne ${e.row}: ${e.errors.join(', ')}`).join('\n');
-  //       } else {
-  //         errorMessage = JSON.stringify(errors);
-  //       }
-  //     } else if (err.response?.data?.message) {
-  //       errorMessage = err.response.data.message;
-  //     } else if (err.message) {
-  //       errorMessage = err.message;
-  //     }
-      
-  //     alert("❌ Erreur lors de l'importation :\n\n" + errorMessage);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-
   const handleUpload = async (e) => {
-  e.preventDefault();
-  
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
+    e.preventDefault();
     
-    const response = await axios.post('/chef-metier/v1/apprenants/import', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    
-    console.log('✅ Succès:', response.data);
-    
-  } catch (error) {
-    console.error('❌ Erreur complète:', error);
-    console.error('📋 Réponse erreur:', error.response?.data);
-    
-    // ✅ AFFICHER L'ERREUR SQL COMPLÈTE
-    if (error.response?.data?.error) {
-      console.error('🔍 Erreur SQL:', error.response.data.error);
-      
-      // Afficher une alerte avec plus de détails
-      alert(`Erreur d'importation:\n${error.response.data.message}\n\nDétails: ${error.response.data.error.substring(0, 200)}`);
+    if (!file) {
+      alert("⚠ Veuillez sélectionner un fichier");
+      return;
     }
-  }
-};
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setLoading(true);
+      const response = await api.post("/chef-metier/v1/apprenants/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      
+      console.log("Réponse import:", response.data);
+      
+      const stats = response.data.stats || response.data.total_apprenants;
+      alert("✅ Importation réussie !");
+      
+      setFile(null);
+      
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      
+      // Attendre un peu avant de recharger
+      setTimeout(async () => {
+        await fetchEtudiants();
+      }, 500);
+      
+    } catch (err) {
+      console.error("Erreur complète:", err);
+      console.error("Réponse erreur:", err.response?.data);
+      
+      let errorMessage = "Erreur inconnue";
+      
+      if (err.response?.data?.errors) {
+        const errors = err.response.data.errors;
+        if (Array.isArray(errors)) {
+          errorMessage = errors.map(e => {
+            // Si c'est une string directe
+            if (typeof e === 'string') {
+              return e;
+            }
+            // Si c'est un objet avec errors array
+            if (e.errors && Array.isArray(e.errors)) {
+              return `Ligne ${e.row}: ${e.errors.join(', ')}`;
+            }
+            // Sinon stringify
+            return JSON.stringify(e);
+          }).join('\n');
+        } else if (typeof errors === 'object') {
+          errorMessage = Object.entries(errors)
+            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+            .join('\n');
+        } else {
+          errorMessage = JSON.stringify(errors);
+        }
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      alert("❌ Erreur lors de l'importation :\n\n" + errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRemoveFile = () => {
     setFile(null);
@@ -140,7 +123,6 @@ const ImportEtudiant = () => {
     }
   };
 
-  // Filtrer les étudiants
   const filteredEtudiants = etudiants.filter((etudiant) => {
     const matchSearch =
       etudiant.matricule?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -154,10 +136,8 @@ const ImportEtudiant = () => {
     return matchSearch && matchMetier;
   });
 
-  // Obtenir la liste unique des métiers
   const metiers = [...new Set(etudiants.map((e) => e.metier?.nom).filter(Boolean))];
 
-  // Statistiques
   const stats = {
     total: etudiants.length,
     parMetier: metiers.length,

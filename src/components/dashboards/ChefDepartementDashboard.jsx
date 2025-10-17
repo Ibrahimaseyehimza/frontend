@@ -124,58 +124,132 @@ const TableauDeBordHome = () => {
       setLoading(true);
       setError(null);
       
-      const [campagnesResponse, entreprisesResponse, metiersResponse] = await Promise.all([
+      // Récupération des données avec gestion d'erreur individuelle
+      // Essayer différents endpoints pour les étudiants selon les permissions
+      const etudiantsEndpoints = [
+        "/apprenants",
+        "/utilisateurs?role=apprenant",
+        "/etudiants",
+        "/users?role=apprenant"
+      ];
+      
+      let etudiantsPromise = api.get(etudiantsEndpoints[0]).catch(() => 
+        api.get(etudiantsEndpoints[1]).catch(() => 
+          api.get(etudiantsEndpoints[2]).catch(() => 
+            api.get(etudiantsEndpoints[3]).catch(() => ({ data: [] }))
+          )
+        )
+      );
+      
+      const responses = await Promise.allSettled([
         api.get("/campagnes"),
         api.get("/entreprises"),
-        api.get("/metiers")
+        api.get("/metiers"),
+        etudiantsPromise
       ]);
       
-      const campagnes = campagnesResponse.data.data || [];
-      const entreprises = entreprisesResponse.data.data || [];
-      const metiersData = metiersResponse.data.data || [];
+      // Extraction des campagnes
+      const campagnes = responses[0].status === 'fulfilled' 
+        ? (responses[0].value?.data?.data || []) 
+        : [];
+      
+      // Extraction des entreprises
+      const entreprises = responses[1].status === 'fulfilled' 
+        ? (responses[1].value?.data?.data || []) 
+        : [];
+      
+      // Extraction des métiers
+      const metiersData = responses[2].status === 'fulfilled' 
+        ? (responses[2].value?.data?.data || []) 
+        : [];
+
+      // Extraction des étudiants avec gestion des différentes structures possibles
+      let etudiantsData = [];
+      if (responses[3].status === 'fulfilled') {
+        const etudiantsResponse = responses[3].value?.data;
+        
+        // Vérifier différentes structures de données possibles
+        if (Array.isArray(etudiantsResponse)) {
+          etudiantsData = etudiantsResponse;
+        } else if (etudiantsResponse?.data && Array.isArray(etudiantsResponse.data)) {
+          etudiantsData = etudiantsResponse.data;
+        } else if (etudiantsResponse?.apprenants && Array.isArray(etudiantsResponse.apprenants)) {
+          etudiantsData = etudiantsResponse.apprenants;
+        } else if (etudiantsResponse?.utilisateurs && Array.isArray(etudiantsResponse.utilisateurs)) {
+          etudiantsData = etudiantsResponse.utilisateurs;
+        }
+        
+        console.log("✅ Étudiants récupérés:", etudiantsData.length);
+      } else {
+        console.warn("⚠️ Impossible de récupérer les étudiants directement, utilisation des données des campagnes");
+        
+        // Alternative : Compter les étudiants depuis les campagnes
+        const etudiantsSet = new Set();
+        campagnes.forEach(campagne => {
+          if (campagne.etudiants && Array.isArray(campagne.etudiants)) {
+            campagne.etudiants.forEach(etudiant => {
+              if (etudiant.id) etudiantsSet.add(etudiant.id);
+            });
+          }
+          if (campagne.apprenants && Array.isArray(campagne.apprenants)) {
+            campagne.apprenants.forEach(apprenant => {
+              if (apprenant.id) etudiantsSet.add(apprenant.id);
+            });
+          }
+        });
+        etudiantsData = Array.from(etudiantsSet).map(id => ({ id }));
+        console.log("📊 Étudiants comptés depuis les campagnes:", etudiantsData.length);
+      }
       
       const totalStages = campagnes.length;
       
       const stagesActifs = campagnes.filter(c => {
-        return new Date(c.date_fin) > new Date();
+        return c.date_fin && new Date(c.date_fin) > new Date();
       }).length;
       
       const entreprisesUniques = new Set();
       campagnes.forEach(campagne => {
         if (campagne.entreprises && Array.isArray(campagne.entreprises)) {
           campagne.entreprises.forEach(ent => {
-            entreprisesUniques.add(ent.id);
+            if (ent.id) entreprisesUniques.add(ent.id);
           });
         }
       });
       const entreprisesPartenaires = entreprisesUniques.size;
       
       const entreprisesActivesSet = new Set();
-      campagnes.filter(c => new Date(c.date_fin) > new Date()).forEach(campagne => {
+      campagnes.filter(c => c.date_fin && new Date(c.date_fin) > new Date()).forEach(campagne => {
         if (campagne.entreprises && Array.isArray(campagne.entreprises)) {
           campagne.entreprises.forEach(ent => {
-            entreprisesActivesSet.add(ent.id);
+            if (ent.id) entreprisesActivesSet.add(ent.id);
           });
         }
       });
       
+      const nombreEtudiants = etudiantsData.length;
+      
       let dureeMoyenne = 0;
       if (campagnes.length > 0) {
-        const durees = campagnes.map(c => {
-          const debut = new Date(c.date_debut);
-          const fin = new Date(c.date_fin);
-          const diffTime = Math.abs(fin - debut);
-          const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30);
-          return diffMonths;
-        });
-        dureeMoyenne = durees.reduce((a, b) => a + b, 0) / durees.length;
+        const durees = campagnes
+          .filter(c => c.date_debut && c.date_fin)
+          .map(c => {
+            const debut = new Date(c.date_debut);
+            const fin = new Date(c.date_fin);
+            const diffTime = Math.abs(fin - debut);
+            const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30);
+            return diffMonths;
+          });
+        
+        if (durees.length > 0) {
+          dureeMoyenne = durees.reduce((a, b) => a + b, 0) / durees.length;
+        }
       }
       
       setStats({
         totalStages: totalStages,
         stagesActifs: stagesActifs,
         entreprises: entreprisesPartenaires,
-        etudiants: 455,
+        etudiants: nombreEtudiants,
         dureeMoyenneStages: dureeMoyenne.toFixed(1),
         entreprisesActives: entreprisesActivesSet.size
       });
@@ -186,12 +260,13 @@ const TableauDeBordHome = () => {
         totalStages,
         stagesActifs,
         entreprisesPartenaires,
+        nombreEtudiants,
         entreprisesActives: entreprisesActivesSet.size,
         dureeMoyenne: dureeMoyenne.toFixed(1)
       });
       
     } catch (err) {
-      console.error("Erreur lors du chargement des données:", err);
+      console.error("❌ Erreur lors du chargement des données:", err);
       setError("Impossible de charger les données du tableau de bord");
     } finally {
       setLoading(false);
@@ -532,12 +607,6 @@ const ChefDepartementDashboard = () => {
               />
             </div>
           </div>
-
-          {/* Notifications
-          <button className="relative p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0">
-            <FiBell size={24} className="text-gray-700" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button> */}
 
           {/* Menu profil */}
           <div className="relative profile-menu-container flex-shrink-0">

@@ -652,6 +652,9 @@ import ChefMetierStageList from "./components/pages/chef_de_metier/StageList";
 // ===========================
 import MaitreStageList from "./components/pages/MaitreStageList";
 import ImportEtudiant from "./components/pages/chef_de_metier/ImportEtudiant";
+import MesDemandes from "./components/pages/apprenant/MesDemande";
+import MonStage from "./components/pages/apprenant/MonStage";
+import ListeCampagne from "./components/pages/apprenant/ListeCampagnes";
 
 // ===========================
 // 🧭 PublicRoute : si déjà connecté → dashboard
@@ -729,7 +732,14 @@ function App() {
                 <ApprenantDashboard />
               </ProtectedRoute>
             }
-          />
+          >
+            {/* <Route index element={<Campagnes />} /> */}
+            <Route path="campagnes" element={<ListeCampagne />} />
+            <Route path="mes-demandes" element={<MesDemandes />} />
+            <Route path="mon-stage" element={<MonStage />} />
+            {/* <Route path="rapport" element={<RapportStage />} /> */}
+            {/* <Route path="notes" element={<Notes />} /> */}
+          </Route>
 
           {/* ===========================
               CHEF DE DÉPARTEMENT (CORRIGÉ)

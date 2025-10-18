@@ -246,7 +246,7 @@ import { FiEdit2, FiTrash2, FiUserPlus, FiMail, FiUser, FiSearch, FiRefreshCw } 
 import { BsPersonBadge, BsBuilding } from "react-icons/bs";
 import { RiLockPasswordLine } from "react-icons/ri";
 
-const CampagneRH = () => {
+const RhList = () => {
   const [campagnes, setCampagnes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);

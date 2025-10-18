@@ -637,6 +637,7 @@ import RHDashboard from "./components/dashboards/RHDashboard";
 import MetierList from "./components/pages/MetierList";
 import ChefMetierList from "./components/pages/ChefMetierList";
 import EntrepriseList from "./components/pages/EntrepriseList";
+// import RhList from "./components/pages/RhList";
 import RhList from "./components/pages/RhList";
 import CampagneList from "./components/pages/CampagneList";
 

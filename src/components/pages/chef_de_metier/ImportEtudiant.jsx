@@ -21,7 +21,7 @@ const ImportEtudiant = () => {
   const fetchEtudiants = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/chef-metier/v1/apprenants");
+      const response = await api.get("/chef-metier/apprenants");
       console.log("Réponse complète API:", response.data);
       
       // Essayer différentes structures de données
@@ -56,7 +56,7 @@ const ImportEtudiant = () => {
 
     try {
       setLoading(true);
-      const response = await api.post("/chef-metier/v1/apprenants/import", formData, {
+      const response = await api.post("/chef-metier/apprenants/import", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       

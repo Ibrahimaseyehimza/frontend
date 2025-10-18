@@ -16,7 +16,7 @@ const CampagneList = () => {
   const fetchCampagnes = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/campagnes");
+      const res = await api.get("/campagnes_global");
       setCampagnes(res.data.data || []);
     } catch (error) {
       console.error("Erreur lors du chargement des campagnes:", error);

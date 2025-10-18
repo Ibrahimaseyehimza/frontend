@@ -549,7 +549,7 @@ const ChefDepartementDashboard = () => {
           <NavLink to="utilisateurs" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100  text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
             <div className="flex items-center">
               <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
-              <span className="ml-2">Utilisateurs</span>
+              <span className="ml-2">Chef De Métier</span>
             </div>
           </NavLink>
 

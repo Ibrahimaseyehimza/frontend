@@ -27,24 +27,48 @@ const EntrepriseList = () => {
     fetchData(true);
   }, []);
 
+  // const fetchData = async (showLoader = false) => {
+  //   if (showLoader) setPageLoading(true);
+  //   try {
+  //     const [entrepriseRes, metierRes] = await Promise.all([
+  //       api.get("/entreprises"),
+  //       api.get("/metiers"),
+  //     ]);
+  //     setEntreprises(entrepriseRes.data.data ?? []);
+  //     setMetiers(metierRes.data.data ?? []);
+  //   } catch (err) {
+  //     console.error("Erreur chargement:", err);
+  //     setEntreprises([]);
+  //     setMetiers([]);
+  //   } finally {
+  //     if (showLoader) setPageLoading(false);
+  //   }
+  // };
+
   const fetchData = async (showLoader = false) => {
     if (showLoader) setPageLoading(true);
     try {
+      console.log("🔍 Début du chargement...");
+      
       const [entrepriseRes, metierRes] = await Promise.all([
-        api.get("/entreprises"),
+        api.get("/entreprises_global"),
         api.get("/metiers"),
       ]);
+      
+      console.log("✅ Entreprises:", entrepriseRes.data);
+      console.log("✅ Métiers:", metierRes.data);
+      
       setEntreprises(entrepriseRes.data.data ?? []);
       setMetiers(metierRes.data.data ?? []);
     } catch (err) {
-      console.error("Erreur chargement:", err);
+      console.error("❌ Erreur complète:", err);
+      console.error("❌ Response:", err.response);
       setEntreprises([]);
       setMetiers([]);
     } finally {
       if (showLoader) setPageLoading(false);
     }
   };
-
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 

@@ -70,7 +70,7 @@ const TableauDeBordRH = () => {
 
       // Récupération parallèle des données
       const responses = await Promise.allSettled([
-        api.get("/campagnes"),
+        api.get("/campagnes_rh"),
         api.get("/maitres"),
         api.get("/entreprises"),
         etudiantsPromise
@@ -443,7 +443,7 @@ const RHDashboard = () => {
             </div>
           </NavLink>
 
-          <NavLink to="campagnes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-600 shadow-md" : "hover:bg-blue-100 hover:text-blue-600"}`}>
+          <NavLink to="campagnes_rh" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-600 shadow-md" : "hover:bg-blue-100 hover:text-blue-600"}`}>
             <div className="flex items-center">
               <TbBrandCampaignmonitor className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Campagnes</span>

@@ -35,7 +35,7 @@ const CampagneList = () => {
     try {
       const [metierRes, campagneRes] = await Promise.all([
         api.get("/metiers"),
-        api.get("/campagnes-globale"),
+        api.get("/campagnes_global"),
       ]);
       setMetiers(metierRes.data.data ?? []);
       setCampagnes(campagneRes.data.data ?? []);

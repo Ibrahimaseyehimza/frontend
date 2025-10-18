@@ -15,7 +15,7 @@ const EntrepriseList = () => {
   const fetchEntreprises = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/entreprises");
+      const res = await api.get("/entreprises_global");
       setEntreprises(res.data.data || []);
     } catch (error) {
       console.error("Erreur lors du chargement des entreprises:", error);

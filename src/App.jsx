@@ -655,6 +655,7 @@ import ImportEtudiant from "./components/pages/chef_de_metier/ImportEtudiant";
 import MesDemandes from "./components/pages/apprenant/MesDemande";
 import MonStage from "./components/pages/apprenant/MonStage";
 import ListeCampagne from "./components/pages/apprenant/ListeCampagnes";
+import CampagneRH from "./components/pages/RhList";
 import StageList from "./components/pages/chef_de_metier/StageList";
 
 // ===========================
@@ -801,15 +802,15 @@ function App() {
           {/* ===========================
               RESSOURCES HUMAINES (RH)
           =========================== */}
-          <Route
-            path="/dashboard/rh"
-            element={
-              <ProtectedRoute allowedRoles={["rh"]}>
+          <Route path="/dashboard/rh" element={
+            <ProtectedRoute allowedRoles={["rh"]}>
                 <RHDashboard />
               </ProtectedRoute>
             }
-          >
+          >                          
             <Route path="maitresrh" element={<MaitreStageList />} />
+            <Route path="campagnes_rh" element={<CampagneRH />} />
+            {/* <Route path="stages" element={<StagesRH />} /> */}
             
           </Route>
 

@@ -151,7 +151,7 @@ const Login = () => {
                     ? "bg-gray-400 cursor-not-allowed"
                     : success
                     ? "bg-green-500 hover:bg-green-600"
-                    : "bg-white text-blue-700 hover:bg-gray-100"
+                    : "bg-white text-dégradé hover:bg-gray-100"
                 } ${loading || success ? "text-white" : ""} shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`}
               >
                 {loading && !success && (
@@ -176,7 +176,7 @@ const Login = () => {
 
             <p className="text-center text-white mt-4">
               Pas encore de compte ?{" "}
-              <a href="/register" className="text-blue-200 hover:text-white hover:underline font-semibold transition-colors">
+              <a href="/register" className="text-blue-500 hover:text-white hover:underline font-semibold transition-colors">
                 Inscrivez-vous
               </a>
             </p>

@@ -142,7 +142,7 @@ const TableauDeBordHome = () => {
       );
       
       const responses = await Promise.allSettled([
-        api.get("/campagnes"),
+        api.get("/campagnes-global"),
         api.get("/entreprises"),
         api.get("/metiers"),
         etudiantsPromise

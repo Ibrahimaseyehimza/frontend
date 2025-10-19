@@ -116,7 +116,7 @@ const ListeCampagne = () => {
       });
       
       // ✅ CORRECTION : Ajout du préfixe /v1
-      const response = await api.post("/v1/apprenant/postuler", {
+      const response = await api.post("/apprenant/postuler", {
         campagne_id: selectedCampagne.id,
         entreprise_id: entrepriseId,
         adresse_1: adresse1,
@@ -126,7 +126,7 @@ const ListeCampagne = () => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        }                                                                                                                                                                                           
       });
 
       console.log("✅ Candidature envoyée:", response.data);

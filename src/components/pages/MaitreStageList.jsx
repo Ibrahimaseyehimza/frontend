@@ -28,7 +28,7 @@ const MaitreStageList = () => {
       setLoading(true);
       const [maitresRes, entreprisesRes] = await Promise.all([
         api.get("/maitres"),
-        api.get("/entreprises"),
+        api.get("/entreprises_global"),
       ]);
       setMaitres(maitresRes.data.data ?? []);
       setEntreprises(entreprisesRes.data.data ?? []);

@@ -745,7 +745,7 @@ const ApprenantDashboard = () => {
       {/* Main content */}
       <main className="flex-1 flex flex-col w-full lg:w-auto overflow-hidden">
         {/* Header */}
-        <header className="bg-white shadow-sm p-3 sm:p-4 flex items-center gap-4 sticky top-0 z-10 h-16">
+        <header className="bg-white shadow-lg p-3 sm:p-4 flex items-center gap-4 sticky top-0 z-10 h-16">
           <button
             onClick={toggleSidebar}
             className="lg:hidden text-gray-700 hover:text-gray-900 flex-shrink-0"

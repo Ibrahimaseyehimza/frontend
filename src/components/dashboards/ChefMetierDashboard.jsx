@@ -12,6 +12,8 @@ import { HiMenuAlt3 } from "react-icons/hi";
 import { BsBuilding, BsBriefcase } from "react-icons/bs";
 import { FaRegUser } from "react-icons/fa6";
 import NotificationBell from '../pages/NotificationBell';
+import { HiOutlineInbox } from "react-icons/hi2";
+import { MdAssignmentInd } from "react-icons/md";
 
 // Composant pour afficher les statistiques
 const StatCard = ({ title, value, subtitle, icon: Icon, iconBg, trend }) => (
@@ -724,7 +726,7 @@ const ChefMetierDashboard = () => {
             }
           >
             <div className="flex items-center">
-              <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
+              <MdAssignmentInd className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Affectations</span>
             </div>
           </NavLink>
@@ -738,7 +740,7 @@ const ChefMetierDashboard = () => {
             }
           >
             <div className="flex items-center">
-              <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
+              <HiOutlineInbox className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Demandes</span>
             </div>
           </NavLink>

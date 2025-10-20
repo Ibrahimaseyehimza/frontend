@@ -11,6 +11,8 @@ import { BsPersonWorkspace } from "react-icons/bs";
 import { FiLogOut, FiSearch, FiSettings, FiUser } from "react-icons/fi";
 import { HiMenuAlt3 } from "react-icons/hi";
 import NotificationBell from '../pages/NotificationBell';
+import { FiBell } from 'react-icons/fi';
+import { BsFillPersonVcardFill } from "react-icons/bs";
 
 // Composant Stat Card
 const StatCard = ({ title, value, subtitle, icon: Icon, iconBg }) => (
@@ -464,7 +466,7 @@ const RHDashboard = () => {
             }`}
           >
             <div className="flex items-center">
-              <TbBrandCampaignmonitor className="text-lg sm:text-xl flex-shrink-0" />
+              <FiBell className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Notification</span>
             </div>
           </NavLink>
@@ -476,7 +478,7 @@ const RHDashboard = () => {
             }`}
           >
             <div className="flex items-center">
-              <TbBrandCampaignmonitor className="text-lg sm:text-xl flex-shrink-0" />
+              <BsFillPersonVcardFill className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Affectations</span>
             </div>
           </NavLink>

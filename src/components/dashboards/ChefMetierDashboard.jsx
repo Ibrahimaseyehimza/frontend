@@ -65,40 +65,86 @@ const TableauDeBordHome = () => {
       
       console.log("👤 Chef de métier connecté:", {
         name: user?.name,
-        metier_id: metierId
+        metier_id: metierId,
+        user: user
       });
       
       // Récupération des données avec gestion d'erreur individuelle
       const responses = await Promise.allSettled([
-        api.get("/campagnes"),
+        // Essayer d'abord /campagnes_global puis /campagnes-global
+        api.get("/campagnes_global").catch(() => api.get("/campagnes-global")),
         api.get("/entreprises"),
-        api.get("/apprenants").catch(() => api.get("/utilisateurs?role=apprenant")),
-        api.get("/stages")
+        // Essayer différents endpoints pour les apprenants
+        api.get("/apprenants").catch(() => 
+          api.get("/utilisateurs?role=apprenant").catch(() => 
+            api.get("/etudiants").catch(() => ({ data: [] }))
+          )
+        ),
+        // Essayer de récupérer les stages
+        api.get("/stages").catch(() => ({ data: [] }))
       ]);
       
-      // Extraction des campagnes
-      const toutesLesCampagnes = responses[0].status === 'fulfilled' 
-        ? (responses[0].value?.data?.data || []) 
-        : [];
+      // ========== EXTRACTION DES CAMPAGNES ==========
+      let toutesLesCampagnes = [];
+      if (responses[0].status === 'fulfilled') {
+        const campagnesResponse = responses[0].value?.data;
+        
+        if (Array.isArray(campagnesResponse)) {
+          toutesLesCampagnes = campagnesResponse;
+        } else if (campagnesResponse?.data && Array.isArray(campagnesResponse.data)) {
+          toutesLesCampagnes = campagnesResponse.data;
+        } else if (campagnesResponse?.campagnes && Array.isArray(campagnesResponse.campagnes)) {
+          toutesLesCampagnes = campagnesResponse.campagnes;
+        }
+        
+        console.log("✅ Toutes les campagnes récupérées:", toutesLesCampagnes.length);
+      } else {
+        console.warn("⚠️ Impossible de récupérer les campagnes:", responses[0].reason);
+      }
       
-      // Filtrer les campagnes par métier si metierId existe
+      // ========== FILTRAGE DES CAMPAGNES PAR MÉTIER ==========
       const campagnes = metierId 
         ? toutesLesCampagnes.filter(c => {
             // Vérifier si la campagne est associée au métier du chef
+            // Essayer plusieurs propriétés possibles
             if (c.metier_id === metierId) return true;
+            if (c.metier_id === parseInt(metierId)) return true;
+            
+            // Vérifier dans un tableau de métiers
             if (c.metiers && Array.isArray(c.metiers)) {
-              return c.metiers.some(m => m.id === metierId);
+              return c.metiers.some(m => {
+                return m.id === metierId || m.id === parseInt(metierId) || m === metierId;
+              });
             }
+            
+            // Vérifier si c'est un objet métier
+            if (c.metier && typeof c.metier === 'object') {
+              return c.metier.id === metierId || c.metier.id === parseInt(metierId);
+            }
+            
             return false;
           })
         : toutesLesCampagnes;
       
-      console.log("📊 Campagnes filtrées pour ce métier:", campagnes.length);
+      console.log("📊 Campagnes filtrées pour ce métier:", {
+        total: toutesLesCampagnes.length,
+        filtrees: campagnes.length,
+        metierId: metierId
+      });
       
-      // Extraction des entreprises
-      const toutesEntreprises = responses[1].status === 'fulfilled' 
-        ? (responses[1].value?.data?.data || []) 
-        : [];
+      // ========== EXTRACTION DES ENTREPRISES ==========
+      let toutesEntreprises = [];
+      if (responses[1].status === 'fulfilled') {
+        const entreprisesResponse = responses[1].value?.data;
+        
+        if (Array.isArray(entreprisesResponse)) {
+          toutesEntreprises = entreprisesResponse;
+        } else if (entreprisesResponse?.data && Array.isArray(entreprisesResponse.data)) {
+          toutesEntreprises = entreprisesResponse.data;
+        }
+        
+        console.log("✅ Entreprises récupérées:", toutesEntreprises.length);
+      }
       
       // Extraire les entreprises uniques liées aux campagnes du métier
       const entreprisesSet = new Set();
@@ -115,44 +161,101 @@ const TableauDeBordHome = () => {
       
       const entreprisesPartenaires = entreprisesSet.size;
       
-      // Extraction des apprenants
+      // ========== EXTRACTION DES APPRENANTS ==========
       let apprenantsData = [];
       if (responses[2].status === 'fulfilled') {
         const apprenantsResponse = responses[2].value?.data;
+        
         if (Array.isArray(apprenantsResponse)) {
           apprenantsData = apprenantsResponse;
         } else if (apprenantsResponse?.data && Array.isArray(apprenantsResponse.data)) {
           apprenantsData = apprenantsResponse.data;
+        } else if (apprenantsResponse?.apprenants && Array.isArray(apprenantsResponse.apprenants)) {
+          apprenantsData = apprenantsResponse.apprenants;
+        } else if (apprenantsResponse?.utilisateurs && Array.isArray(apprenantsResponse.utilisateurs)) {
+          apprenantsData = apprenantsResponse.utilisateurs;
         }
+        
+        console.log("✅ Apprenants récupérés:", apprenantsData.length);
+      } else {
+        console.warn("⚠️ Impossible de récupérer les apprenants directement");
+        
+        // Essayer d'extraire depuis les campagnes
+        const apprenantsSet = new Set();
+        campagnes.forEach(campagne => {
+          if (campagne.etudiants && Array.isArray(campagne.etudiants)) {
+            campagne.etudiants.forEach(etudiant => {
+              if (etudiant.id) apprenantsSet.add(JSON.stringify(etudiant));
+            });
+          }
+          if (campagne.apprenants && Array.isArray(campagne.apprenants)) {
+            campagne.apprenants.forEach(apprenant => {
+              if (apprenant.id) apprenantsSet.add(JSON.stringify(apprenant));
+            });
+          }
+        });
+        apprenantsData = Array.from(apprenantsSet).map(item => JSON.parse(item));
+        console.log("📊 Apprenants extraits des campagnes:", apprenantsData.length);
       }
       
       // Filtrer les apprenants par métier
       const apprenantsDuMetier = metierId
-        ? apprenantsData.filter(a => a.metier_id === metierId)
+        ? apprenantsData.filter(a => {
+            return a.metier_id === metierId || 
+                   a.metier_id === parseInt(metierId) ||
+                   (a.metier && (a.metier.id === metierId || a.metier.id === parseInt(metierId)));
+          })
         : apprenantsData;
       
-      // Extraction des stages
-      const tousLesStages = responses[3].status === 'fulfilled' 
-        ? (responses[3].value?.data?.data || []) 
-        : [];
+      console.log("📊 Apprenants filtrés pour ce métier:", {
+        total: apprenantsData.length,
+        filtres: apprenantsDuMetier.length
+      });
+      
+      // ========== EXTRACTION DES STAGES ==========
+      let tousLesStages = [];
+      if (responses[3].status === 'fulfilled') {
+        const stagesResponse = responses[3].value?.data;
+        
+        if (Array.isArray(stagesResponse)) {
+          tousLesStages = stagesResponse;
+        } else if (stagesResponse?.data && Array.isArray(stagesResponse.data)) {
+          tousLesStages = stagesResponse.data;
+        } else if (stagesResponse?.stages && Array.isArray(stagesResponse.stages)) {
+          tousLesStages = stagesResponse.stages;
+        }
+        
+        console.log("✅ Stages récupérés:", tousLesStages.length);
+      } else {
+        console.warn("⚠️ Impossible de récupérer les stages");
+      }
       
       // Filtrer les stages par campagnes du métier
       const campagnesIds = new Set(campagnes.map(c => c.id));
-      const stagesDuMetier = tousLesStages.filter(s => 
-        campagnesIds.has(s.campagne_id)
-      );
+      const stagesDuMetier = tousLesStages.filter(s => {
+        return campagnesIds.has(s.campagne_id) || campagnesIds.has(parseInt(s.campagne_id));
+      });
       
-      // Calcul des statistiques
+      console.log("📊 Stages filtrés pour ce métier:", {
+        total: tousLesStages.length,
+        filtres: stagesDuMetier.length
+      });
+      
+      // ========== CALCUL DES STATISTIQUES ==========
       const totalCampagnes = campagnes.length;
       
       const campagnesActives = campagnes.filter(c => {
-        return c.date_fin && new Date(c.date_fin) > new Date();
+        if (!c.date_fin) return false;
+        const dateFin = new Date(c.date_fin);
+        return dateFin > new Date();
       }).length;
       
       // Stages confirmés (statut validé, confirmé, etc.)
-      const stagesConfirmes = stagesDuMetier.filter(s => 
-        s.statut && ['validé', 'confirmé', 'en_cours', 'actif'].includes(s.statut.toLowerCase())
-      ).length;
+      const stagesConfirmes = stagesDuMetier.filter(s => {
+        if (!s.statut) return false;
+        const statut = s.statut.toLowerCase();
+        return ['validé', 'valide', 'confirmé', 'confirme', 'en_cours', 'en cours', 'actif'].includes(statut);
+      }).length;
       
       // Calcul du taux de placement
       let tauxPlacement = 0;
@@ -160,6 +263,7 @@ const TableauDeBordHome = () => {
         const apprenantsPlaces = new Set();
         stagesDuMetier.forEach(stage => {
           if (stage.apprenant_id) apprenantsPlaces.add(stage.apprenant_id);
+          if (stage.etudiant_id) apprenantsPlaces.add(stage.etudiant_id);
         });
         tauxPlacement = Math.round((apprenantsPlaces.size / apprenantsDuMetier.length) * 100);
       }
@@ -192,20 +296,24 @@ const TableauDeBordHome = () => {
         dureeMoyenne
       });
       
-      // Générer les activités récentes
+      // ========== GÉNÉRER LES ACTIVITÉS RÉCENTES ==========
       const activities = [];
       
       // Dernières campagnes créées
       const dernieresCampagnes = [...campagnes]
+        .filter(c => c.created_at)
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         .slice(0, 2);
       
       dernieresCampagnes.forEach(c => {
-        const daysAgo = Math.floor((new Date() - new Date(c.created_at)) / (1000 * 60 * 60 * 24));
+        const createdDate = new Date(c.created_at);
+        const now = new Date();
+        const daysAgo = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+        
         activities.push({
           type: 'campagne',
-          message: `Nouvelle campagne: ${c.nom || c.titre || 'Sans titre'}`,
-          time: daysAgo === 0 ? "Aujourd'hui" : `Il y a ${daysAgo} jour${daysAgo > 1 ? 's' : ''}`,
+          message: `Nouvelle campagne: ${c.nom || c.titre || c.libelle || 'Sans titre'}`,
+          time: daysAgo === 0 ? "Aujourd'hui" : daysAgo === 1 ? "Hier" : `Il y a ${daysAgo} jours`,
           color: 'blue'
         });
       });
@@ -218,30 +326,31 @@ const TableauDeBordHome = () => {
       
       if (derniersStages.length > 0) {
         const stage = derniersStages[0];
-        const daysAgo = Math.floor((new Date() - new Date(stage.created_at)) / (1000 * 60 * 60 * 24));
+        const createdDate = new Date(stage.created_at);
+        const now = new Date();
+        const daysAgo = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+        
         activities.push({
           type: 'stage',
           message: `Nouveau stage enregistré`,
-          time: daysAgo === 0 ? "Aujourd'hui" : `Il y a ${daysAgo} jour${daysAgo > 1 ? 's' : ''}`,
+          time: daysAgo === 0 ? "Aujourd'hui" : daysAgo === 1 ? "Hier" : `Il y a ${daysAgo} jours`,
           color: 'green'
         });
       }
       
       // Si pas assez d'activités, ajouter des données par défaut
       if (activities.length === 0) {
-        activities.push(
-          {
-            type: 'info',
-            message: 'Bienvenue sur votre tableau de bord',
-            time: "Aujourd'hui",
-            color: 'purple'
-          }
-        );
+        activities.push({
+          type: 'info',
+          message: 'Bienvenue sur votre tableau de bord',
+          time: "Aujourd'hui",
+          color: 'purple'
+        });
       }
       
       setRecentActivities(activities);
       
-      console.log("📊 Statistiques Chef de Métier:", {
+      console.log("📊 Statistiques finales Chef de Métier:", {
         totalCampagnes,
         campagnesActives,
         entreprisesPartenaires,
@@ -253,6 +362,11 @@ const TableauDeBordHome = () => {
       
     } catch (err) {
       console.error("❌ Erreur lors du chargement des données:", err);
+      console.error("Détails de l'erreur:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
       setError("Impossible de charger les données du tableau de bord");
     } finally {
       setLoading(false);
@@ -301,7 +415,7 @@ const TableauDeBordHome = () => {
       {/* Bannière de bienvenue */}
       <div className="bg-dégradé rounded-2xl p-6 text-white shadow-lg flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Bienvenue, {user?.name}</h1>
+          <h1 className="text-2xl font-bold mb-1">Bienvenue, {user?.name || "Chef de Métier"}</h1>
           <p className="text-blue-100 text-sm">Tableau de bord - Chef de Métier</p>
           <p className="text-xs text-blue-200 mt-1">
             Gérez et supervisez les activités de votre métier
@@ -537,7 +651,7 @@ const ChefMetierDashboard = () => {
             end 
             className={({ isActive }) => 
               `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"
+                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
               }`
             }
           >
@@ -551,7 +665,7 @@ const ChefMetierDashboard = () => {
             to="campagnes" 
             className={({ isActive }) => 
               `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"
+                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
               }`
             }
           >
@@ -565,7 +679,7 @@ const ChefMetierDashboard = () => {
             to="entreprises" 
             className={({ isActive }) => 
               `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"
+                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
               }`
             }
           >
@@ -579,7 +693,7 @@ const ChefMetierDashboard = () => {
             to="apprenants" 
             className={({ isActive }) => 
               `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"
+                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
               }`
             }
           >
@@ -593,7 +707,7 @@ const ChefMetierDashboard = () => {
             to="stages" 
             className={({ isActive }) => 
               `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-                isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"
+                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
               }`
             }
           >
@@ -640,7 +754,7 @@ const ChefMetierDashboard = () => {
                 {getInitials(user?.name)}
               </div>
               <div className="hidden md:block text-left">
-                <p className="text-sm font-semibold text-gray-800">{user?.name}</p>
+                <p className="text-sm font-semibold text-gray-800">{user?.name || "Chef de Métier"}</p>
                 <p className="text-xs text-gray-500">Chef de Métier</p>
               </div>
             </button>
@@ -649,7 +763,7 @@ const ChefMetierDashboard = () => {
             {showProfileMenu && (
               <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                 <div className="px-4 py-3 border-b border-gray-200">
-                  <p className="text-sm font-semibold text-gray-800">{user?.name}</p>
+                  <p className="text-sm font-semibold text-gray-800">{user?.name || "Chef de Métier"}</p>
                   <p className="text-xs text-gray-500">{user?.email || 'chef.metier@isep-thies.edu.sn'}</p>
                 </div>
                 

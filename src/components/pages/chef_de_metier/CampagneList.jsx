@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
-import api from "../../../api/axios";   
+import api from "../../../api/axios";
+import { useAuth } from "../../../AuthContext"; // Import du contexte d'authentification
 import { FiEye, FiBarChart2, FiCalendar, FiUsers } from "react-icons/fi";
 import { RiBuilding4Line } from "react-icons/ri";
 import { BsCalendar3, BsPerson } from "react-icons/bs";
 
 const CampagneList = () => {
+  const { user } = useAuth(); // Récupérer l'utilisateur connecté
   const [campagnes, setCampagnes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -16,50 +18,139 @@ const CampagneList = () => {
   const fetchCampagnes = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/campagnes_global");
-      setCampagnes(res.data.data || []);
+      
+      // Récupérer le metier_id du chef connecté
+      const metierId = user?.metier_id;
+      
+      console.log("👤 Chef de métier connecté:", {
+        name: user?.name,
+        metier_id: metierId
+      });
+
+      // Essayer différents endpoints
+      let response;
+      try {
+        response = await api.get("/campagnes_global");
+      } catch (err) {
+        response = await api.get("/campagnes-global");
+      }
+
+      // Extraire les données
+      let toutesLesCampagnes = [];
+      const data = response.data;
+      
+      if (Array.isArray(data)) {
+        toutesLesCampagnes = data;
+      } else if (data?.data && Array.isArray(data.data)) {
+        toutesLesCampagnes = data.data;
+      } else if (data?.campagnes && Array.isArray(data.campagnes)) {
+        toutesLesCampagnes = data.campagnes;
+      }
+
+      console.log("📊 Toutes les campagnes récupérées:", toutesLesCampagnes.length);
+
+      // ========== FILTRAGE PAR MÉTIER ==========
+      const campagnesFiltrees = metierId 
+        ? toutesLesCampagnes.filter(campagne => {
+            // Vérifier si la campagne est associée au métier du chef
+            // Essayer plusieurs propriétés possibles
+            if (campagne.metier_id === metierId) return true;
+            if (campagne.metier_id === parseInt(metierId)) return true;
+            
+            // Vérifier dans un tableau de métiers
+            if (campagne.metiers && Array.isArray(campagne.metiers)) {
+              return campagne.metiers.some(m => {
+                return m.id === metierId || 
+                       m.id === parseInt(metierId) || 
+                       m === metierId;
+              });
+            }
+            
+            // Vérifier si c'est un objet métier
+            if (campagne.metier && typeof campagne.metier === 'object') {
+              return campagne.metier.id === metierId || 
+                     campagne.metier.id === parseInt(metierId);
+            }
+            
+            return false;
+          })
+        : toutesLesCampagnes; // Si pas de metierId, afficher tout (pour admin)
+
+      console.log("✅ Campagnes filtrées pour le métier:", {
+        total: toutesLesCampagnes.length,
+        filtrees: campagnesFiltrees.length,
+        metierId: metierId
+      });
+
+      setCampagnes(campagnesFiltrees);
+      
     } catch (error) {
-      console.error("Erreur lors du chargement des campagnes:", error);
+      console.error("❌ Erreur lors du chargement des campagnes:", error);
+      console.error("Détails:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Filtrer les campagnes
+  // Filtrer les campagnes par recherche
   const filteredCampagnes = campagnes.filter((c) =>
     c.titre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.libelle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Calculer les statistiques
   const stats = {
     total: campagnes.length,
-    actives: campagnes.filter((c) => new Date(c.date_fin) > new Date()).length,
-    terminees: campagnes.filter((c) => new Date(c.date_fin) <= new Date()).length,
+    actives: campagnes.filter((c) => {
+      if (!c.date_fin) return false;
+      return new Date(c.date_fin) > new Date();
+    }).length,
+    terminees: campagnes.filter((c) => {
+      if (!c.date_fin) return false;
+      return new Date(c.date_fin) <= new Date();
+    }).length,
     entreprisesTotal: campagnes.reduce((sum, c) => sum + (c.entreprises?.length || 0), 0)
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
+    try {
+      return new Date(dateString).toLocaleDateString("fr-FR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    } catch (e) {
+      return "N/A";
+    }
   };
 
   const getSemestre = (dateDebut) => {
     if (!dateDebut) return "N/A";
-    const date = new Date(dateDebut);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const semestre = month <= 6 ? "S1" : "S2";
-    return `${semestre} - ${year}`;
+    try {
+      const date = new Date(dateDebut);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const semestre = month <= 6 ? "S1" : "S2";
+      return `${semestre} - ${year}`;
+    } catch (e) {
+      return "N/A";
+    }
   };
 
   const isActive = (dateFin) => {
     if (!dateFin) return false;
-    return new Date(dateFin) > new Date();
+    try {
+      return new Date(dateFin) > new Date();
+    } catch (e) {
+      return false;
+    }
   };
 
   if (loading) {
@@ -82,11 +173,16 @@ const CampagneList = () => {
         <div className="flex justify-between items-start mb-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">
-              Campagnes de Stage
+              Mes Campagnes de Stage
             </h1>
             <p className="text-gray-600 mt-1">
-              Liste des campagnes de recrutement de stages
+              Liste des campagnes de votre métier
             </p>
+            {user?.metier_id && (
+              <p className="text-sm text-blue-600 mt-1">
+                📌 Filtré pour votre métier uniquement
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -130,7 +226,7 @@ const CampagneList = () => {
           <p className="text-gray-400 mt-2">
             {searchTerm
               ? "Essayez une autre recherche"
-              : "Aucune campagne n'est disponible pour le moment"}
+              : "Aucune campagne n'est disponible pour votre métier"}
           </p>
         </div>
       ) : (
@@ -138,9 +234,12 @@ const CampagneList = () => {
           {filteredCampagnes.map((campagne) => {
             const active = isActive(campagne.date_fin);
             const entreprisesCount = campagne.entreprises?.length || 0;
-            const etudiantsInscrits = Math.floor(entreprisesCount * 2.5);
+            const etudiantsInscrits = campagne.etudiants?.length || campagne.apprenants?.length || Math.floor(entreprisesCount * 2.5);
             const stagesConfirmes = Math.floor(etudiantsInscrits * 0.7);
             const postesDisponibles = entreprisesCount * 3;
+            
+            // Gérer les différents noms de propriétés pour le titre
+            const titreCampagne = campagne.titre || campagne.nom || campagne.libelle || "Campagne sans titre";
 
             return (
               <div
@@ -152,7 +251,7 @@ const CampagneList = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-2xl font-bold text-gray-800">
-                        {campagne.titre}
+                        {titreCampagne}
                       </h3>
                       {active && (
                         <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
@@ -205,7 +304,7 @@ const CampagneList = () => {
                     <div>
                       <div className="text-xs text-gray-500 font-medium">Coordinateur</div>
                       <div className="text-sm font-semibold text-gray-800">
-                        Chef Département
+                        {campagne.coordinateur?.name || campagne.createur?.name || "Chef Département"}
                       </div>
                     </div>
                   </div>
@@ -308,7 +407,8 @@ const CampagneList = () => {
 
                 {/* Footer - Info création */}
                 <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500 text-right">
-                  Créé le {formatDate(campagne.created_at)} par Chef Département
+                  Créé le {formatDate(campagne.created_at)} 
+                  {campagne.createur?.name && ` par ${campagne.createur.name}`}
                 </div>
               </div>
             );

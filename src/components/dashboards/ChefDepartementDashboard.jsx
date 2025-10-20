@@ -124,8 +124,9 @@ const TableauDeBordHome = () => {
       setLoading(true);
       setError(null);
       
-      // Récupération des données avec gestion d'erreur individuelle
-      // Essayer différents endpoints pour les étudiants selon les permissions
+      console.log("🔄 Début du chargement des données du dashboard...");
+      
+      // Essayer différents endpoints pour les étudiants
       const etudiantsEndpoints = [
         "/apprenants",
         "/utilisateurs?role=apprenant",
@@ -141,34 +142,65 @@ const TableauDeBordHome = () => {
         )
       );
       
+      // Récupération parallèle des données
       const responses = await Promise.allSettled([
-        api.get("/campagnes-global"),
+        api.get("/campagnes_global"),
         api.get("/entreprises"),
         api.get("/metiers"),
         etudiantsPromise
       ]);
       
-      // Extraction des campagnes
-      const campagnes = responses[0].status === 'fulfilled' 
-        ? (responses[0].value?.data?.data || []) 
-        : [];
+      // ========== EXTRACTION DES CAMPAGNES ==========
+      let campagnes = [];
+      if (responses[0].status === 'fulfilled') {
+        const campagnesResponse = responses[0].value?.data;
+        
+        if (Array.isArray(campagnesResponse)) {
+          campagnes = campagnesResponse;
+        } else if (campagnesResponse?.data && Array.isArray(campagnesResponse.data)) {
+          campagnes = campagnesResponse.data;
+        } else if (campagnesResponse?.campagnes && Array.isArray(campagnesResponse.campagnes)) {
+          campagnes = campagnesResponse.campagnes;
+        }
+        
+        console.log("✅ Campagnes récupérées:", campagnes.length, campagnes);
+      } else {
+        console.error("❌ Erreur lors de la récupération des campagnes:", responses[0].reason);
+        console.log("Tentative de récupération avec l'autre endpoint...");
+        
+        try {
+          const fallbackResponse = await api.get("/campagnes-global");
+          const fallbackData = fallbackResponse.data;
+          
+          if (Array.isArray(fallbackData)) {
+            campagnes = fallbackData;
+          } else if (fallbackData?.data && Array.isArray(fallbackData.data)) {
+            campagnes = fallbackData.data;
+          }
+          
+          console.log("✅ Campagnes récupérées via fallback:", campagnes.length);
+        } catch (fallbackErr) {
+          console.error("❌ Échec du fallback:", fallbackErr);
+        }
+      }
       
-      // Extraction des entreprises
+      // ========== EXTRACTION DES ENTREPRISES ==========
       const entreprises = responses[1].status === 'fulfilled' 
         ? (responses[1].value?.data?.data || []) 
         : [];
+      console.log("✅ Entreprises récupérées:", entreprises.length);
       
-      // Extraction des métiers
+      // ========== EXTRACTION DES MÉTIERS ==========
       const metiersData = responses[2].status === 'fulfilled' 
         ? (responses[2].value?.data?.data || []) 
         : [];
+      console.log("✅ Métiers récupérés:", metiersData.length);
 
-      // Extraction des étudiants avec gestion des différentes structures possibles
+      // ========== EXTRACTION DES ÉTUDIANTS ==========
       let etudiantsData = [];
       if (responses[3].status === 'fulfilled') {
         const etudiantsResponse = responses[3].value?.data;
         
-        // Vérifier différentes structures de données possibles
         if (Array.isArray(etudiantsResponse)) {
           etudiantsData = etudiantsResponse;
         } else if (etudiantsResponse?.data && Array.isArray(etudiantsResponse.data)) {
@@ -181,9 +213,8 @@ const TableauDeBordHome = () => {
         
         console.log("✅ Étudiants récupérés:", etudiantsData.length);
       } else {
-        console.warn("⚠️ Impossible de récupérer les étudiants directement, utilisation des données des campagnes");
+        console.warn("⚠️ Impossible de récupérer les étudiants directement");
         
-        // Alternative : Compter les étudiants depuis les campagnes
         const etudiantsSet = new Set();
         campagnes.forEach(campagne => {
           if (campagne.etudiants && Array.isArray(campagne.etudiants)) {
@@ -201,6 +232,7 @@ const TableauDeBordHome = () => {
         console.log("📊 Étudiants comptés depuis les campagnes:", etudiantsData.length);
       }
       
+      // ========== CALCUL DES STATISTIQUES ==========
       const totalStages = campagnes.length;
       
       const stagesActifs = campagnes.filter(c => {
@@ -256,7 +288,7 @@ const TableauDeBordHome = () => {
       
       setMetiers(metiersData);
       
-      console.log("📊 Statistiques du dashboard:", {
+      console.log("📊 Statistiques finales:", {
         totalStages,
         stagesActifs,
         entreprisesPartenaires,
@@ -266,7 +298,7 @@ const TableauDeBordHome = () => {
       });
       
     } catch (err) {
-      console.error("❌ Erreur lors du chargement des données:", err);
+      console.error("❌ Erreur critique:", err);
       setError("Impossible de charger les données du tableau de bord");
     } finally {
       setLoading(false);
@@ -380,78 +412,78 @@ const TableauDeBordHome = () => {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center justify-between">
-            <span>Actions Stratégiques</span>
-            <span className="text-yellow-500">⚡</span>
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <NavLink 
-              to="campagnes"
-              className="block p-6 bg-blue-50 hover:bg-blue-100 rounded-2xl text-left transition-all hover:shadow-md group"
-            >
-              <div className="text-blue-600 mb-3">
-                <TbBrandCampaignmonitor size={32} />
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-1">Nouvelle Campagne</h4>
-              <p className="text-xs text-gray-600">Lancer une campagne de stage</p>
-            </NavLink>
-            
-            <NavLink 
-              to="utilisateurs"
-              className="block p-6 bg-green-50 hover:bg-green-100 rounded-2xl text-left transition-all hover:shadow-md group"
-            >
-              <div className="text-green-600 mb-3">
-                <FaRegUser size={32} />
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-1">Gérer Étudiants</h4>
-              <p className="text-xs text-gray-600">Suivi et affectations</p>
-            </NavLink>
-            
-            <NavLink 
-              to="entreprises"
-              className="block p-6 bg-purple-50 hover:bg-purple-100 rounded-2xl text-left transition-all hover:shadow-md group"
-            >
-              <div className="text-purple-600 mb-3">
-                <RiSchoolLine size={32} />
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-1">Nouveau Partenaire</h4>
-              <p className="text-xs text-gray-600">Ajouter une entreprise</p>
-            </NavLink>
-            
-            <NavLink 
-              to="stages"
-              className="block p-6 bg-orange-50 hover:bg-orange-100 rounded-2xl text-left transition-all hover:shadow-md group"
-            >
-              <div className="text-orange-600 mb-3">
-                <SlPeople size={32} />
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-1">Analytics Avancés</h4>
-              <p className="text-xs text-gray-600">Rapports détaillés</p>
-            </NavLink>
-          </div>
+        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center justify-between">
+          <span>Actions Stratégiques</span>
+          <span className="text-yellow-500">⚡</span>
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <NavLink 
+            to="campagnes"
+            className="block p-6 bg-blue-50 hover:bg-blue-100 rounded-2xl text-left transition-all hover:shadow-md group"
+          >
+            <div className="text-blue-600 mb-3">
+              <TbBrandCampaignmonitor size={32} />
+            </div>
+            <h4 className="font-semibold text-gray-900 mb-1">Nouvelle Campagne</h4>
+            <p className="text-xs text-gray-600">Lancer une campagne de stage</p>
+          </NavLink>
+          
+          <NavLink 
+            to="utilisateurs"
+            className="block p-6 bg-green-50 hover:bg-green-100 rounded-2xl text-left transition-all hover:shadow-md group"
+          >
+            <div className="text-green-600 mb-3">
+              <FaRegUser size={32} />
+            </div>
+            <h4 className="font-semibold text-gray-900 mb-1">Gérer Étudiants</h4>
+            <p className="text-xs text-gray-600">Suivi et affectations</p>
+          </NavLink>
+          
+          <NavLink 
+            to="entreprises"
+            className="block p-6 bg-purple-50 hover:bg-purple-100 rounded-2xl text-left transition-all hover:shadow-md group"
+          >
+            <div className="text-purple-600 mb-3">
+              <RiSchoolLine size={32} />
+            </div>
+            <h4 className="font-semibold text-gray-900 mb-1">Nouveau Partenaire</h4>
+            <p className="text-xs text-gray-600">Ajouter une entreprise</p>
+          </NavLink>
+          
+          <NavLink 
+            to="stages"
+            className="block p-6 bg-orange-50 hover:bg-orange-100 rounded-2xl text-left transition-all hover:shadow-md group"
+          >
+            <div className="text-orange-600 mb-3">
+              <SlPeople size={32} />
+            </div>
+            <h4 className="font-semibold text-gray-900 mb-1">Analytics Avancés</h4>
+            <p className="text-xs text-gray-600">Rapports détaillés</p>
+          </NavLink>
         </div>
+      </div>
 
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-            <span className="mr-2">📊</span>
-            Aperçu des Performances
-          </h3>
-          <div className="grid grid-cols-1 gap-4">
-            <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-xl">
-              <p className="text-3xl font-bold text-green-600 mb-1">87%</p>
-              <p className="text-sm text-gray-600">Taux de placement</p>
-            </div>
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl">
-              <p className="text-3xl font-bold text-blue-600 mb-1">{stats.entreprisesActives}</p>
-              <p className="text-sm text-gray-600">Entreprises actives</p>
-            </div>
-            <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-xl">
-              <p className="text-3xl font-bold text-purple-600 mb-1">{stats.dureeMoyenneStages} mois</p>
-              <p className="text-sm text-gray-600">Durée moyenne des stages</p>
-            </div>
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+          <span className="mr-2">📊</span>
+          Aperçu des Performances
+        </h3>
+        <div className="grid grid-cols-1 gap-4">
+          <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-xl">
+            <p className="text-3xl font-bold text-green-600 mb-1">87%</p>
+            <p className="text-sm text-gray-600">Taux de placement</p>
+          </div>
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl">
+            <p className="text-3xl font-bold text-blue-600 mb-1">{stats.entreprisesActives}</p>
+            <p className="text-sm text-gray-600">Entreprises actives</p>
+          </div>
+          <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-xl">
+            <p className="text-3xl font-bold text-purple-600 mb-1">{stats.dureeMoyenneStages} mois</p>
+            <p className="text-sm text-gray-600">Durée moyenne des stages</p>
           </div>
         </div>
       </div>
+    </div>
   );
 };
 
@@ -463,7 +495,6 @@ const ChefDepartementDashboard = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fonction pour obtenir les initiales
   const getInitials = (name) => {
     if (!name) return "U";
     const parts = name.trim().split(" ");
@@ -492,7 +523,6 @@ const ChefDepartementDashboard = () => {
     }
   }, [location.pathname]);
 
-  // Fermer le menu profil si on clique ailleurs
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showProfileMenu && !event.target.closest('.profile-menu-container')) {
@@ -515,7 +545,6 @@ const ChefDepartementDashboard = () => {
         ></div>
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed lg:static inset-y-0 left-0 z-30 w-64 bg-white text-black flex flex-col shadow-xl transform transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -583,9 +612,7 @@ const ChefDepartementDashboard = () => {
         </nav>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 flex flex-col w-full lg:w-auto overflow-hidden">
-        {/* Header avec recherche et menu profil */}
         <header className="bg-white shadow-sm p-3 sm:p-4 flex items-center gap-4 sticky top-0 z-10">
           <button
             onClick={toggleSidebar}
@@ -594,7 +621,6 @@ const ChefDepartementDashboard = () => {
             <HiMenuAlt3 size={28} />
           </button>
 
-          {/* Barre de recherche */}
           <div className="flex-1 max-w-2xl justify-end hidden sm:flex mx-auto">
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -608,13 +634,11 @@ const ChefDepartementDashboard = () => {
             </div>
           </div>
 
-          {/* Menu profil */}
           <div className="relative profile-menu-container flex-shrink-0">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              {/* Avatar avec initiales */}
               <div className="w-10 h-10 bg-dégradé text-white rounded-full flex items-center justify-center font-bold text-sm">
                 {getInitials(user?.name)}
               </div>
@@ -624,7 +648,6 @@ const ChefDepartementDashboard = () => {
               </div>
             </button>
 
-            {/* Menu déroulant */}
             {showProfileMenu && (
               <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                 <div className="px-4 py-3 border-b border-gray-200">
@@ -635,7 +658,6 @@ const ChefDepartementDashboard = () => {
                 <button
                   onClick={() => {
                     setShowProfileMenu(false);
-                    // Navigation vers profil
                   }}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
                 >
@@ -646,7 +668,6 @@ const ChefDepartementDashboard = () => {
                 <button
                   onClick={() => {
                     setShowProfileMenu(false);
-                    // Navigation vers paramètres
                   }}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
                 >
@@ -671,7 +692,6 @@ const ChefDepartementDashboard = () => {
           </div>
         </header>
 
-        {/* Content */}
         <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-y-auto">
           {isHomePage ? <TableauDeBordHome /> : <Outlet />}
         </div>

@@ -427,7 +427,7 @@ const CampagneList = () => {
                   <div className="space-y-1 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
                       <span className="text-green-500">✓</span>
-                      <span>Moyenne générale ≥ 12/20</span>
+                      <span>Moyenne générale ≥ 14/20</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-green-500">✓</span>

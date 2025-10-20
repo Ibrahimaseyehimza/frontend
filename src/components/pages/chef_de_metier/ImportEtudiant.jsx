@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../../../api/axios";
+import { useAuth } from "../../../AuthContext"; // Import du contexte d'authentification
 import { FiUpload, FiDownload, FiSearch, FiRefreshCw, FiUser, FiMail, FiBook } from "react-icons/fi";
 import { BsFileEarmarkSpreadsheet, BsCalendar3 } from "react-icons/bs";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { FaPen } from "react-icons/fa";
 
 const ImportEtudiant = () => {
+  const { user } = useAuth(); // Récupérer l'utilisateur connecté
   const [file, setFile] = useState(null);
   const [etudiants, setEtudiants] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,18 +23,102 @@ const ImportEtudiant = () => {
   const fetchEtudiants = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/chef-metier/apprenants");
+      
+      // Récupérer le metier_id du chef connecté
+      const metierId = user?.metier_id;
+      
+      console.log("👤 Chef de métier connecté:", {
+        name: user?.name,
+        metier_id: metierId
+      });
+
+      // Essayer différents endpoints
+      let response;
+      try {
+        response = await api.get("/chef-metier/apprenants");
+      } catch (err) {
+        try {
+          response = await api.get("/apprenants");
+        } catch (err2) {
+          try {
+            response = await api.get("/utilisateurs?role=apprenant");
+          } catch (err3) {
+            response = await api.get("/etudiants");
+          }
+        }
+      }
+
       console.log("Réponse complète API:", response.data);
       
-      // Essayer différentes structures de données
-      let data = response.data.data || response.data.apprenants || response.data || [];
+      // Extraire les données
+      let tousLesEtudiants = [];
+      const data = response.data;
       
-      console.log("Données extraites:", data);
-      console.log("Nombre d'étudiants:", Array.isArray(data) ? data.length : 0);
+      if (Array.isArray(data)) {
+        tousLesEtudiants = data;
+      } else if (data?.data && Array.isArray(data.data)) {
+        tousLesEtudiants = data.data;
+      } else if (data?.apprenants && Array.isArray(data.apprenants)) {
+        tousLesEtudiants = data.apprenants;
+      } else if (data?.utilisateurs && Array.isArray(data.utilisateurs)) {
+        tousLesEtudiants = data.utilisateurs;
+      } else if (data?.etudiants && Array.isArray(data.etudiants)) {
+        tousLesEtudiants = data.etudiants;
+      }
       
-      setEtudiants(Array.isArray(data) ? data : []);
+      console.log("📊 Tous les étudiants récupérés:", tousLesEtudiants.length);
+
+      // ========== FILTRAGE PAR MÉTIER ==========
+      let etudiantsFiltres = [];
+      
+      if (metierId) {
+        etudiantsFiltres = tousLesEtudiants.filter(etudiant => {
+          // Vérifier si l'étudiant est associé au métier du chef
+          
+          // Cas 1: metier_id direct
+          if (etudiant.metier_id === metierId || etudiant.metier_id === parseInt(metierId)) {
+            return true;
+          }
+          
+          // Cas 2: Objet métier
+          if (etudiant.metier && typeof etudiant.metier === 'object') {
+            if (etudiant.metier.id === metierId || etudiant.metier.id === parseInt(metierId)) {
+              return true;
+            }
+          }
+          
+          // Cas 3: Tableau de métiers (rare mais possible)
+          if (etudiant.metiers && Array.isArray(etudiant.metiers)) {
+            return etudiant.metiers.some(m => {
+              return m.id === metierId || 
+                     m.id === parseInt(metierId) || 
+                     m === metierId;
+            });
+          }
+          
+          return false;
+        });
+        
+        console.log("✅ Étudiants filtrés pour le métier:", {
+          total: tousLesEtudiants.length,
+          filtres: etudiantsFiltres.length,
+          metierId: metierId
+        });
+      } else {
+        // Si pas de metierId (admin), afficher tous les étudiants
+        etudiantsFiltres = tousLesEtudiants;
+        console.log("⚠️ Pas de metier_id, affichage de tous les étudiants");
+      }
+      
+      setEtudiants(etudiantsFiltres);
+      
     } catch (err) {
-      console.error("Erreur lors de la récupération:", err);
+      console.error("❌ Erreur lors de la récupération:", err);
+      console.error("Détails:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
     } finally {
       setLoading(false);
     }
@@ -53,17 +139,44 @@ const ImportEtudiant = () => {
 
     const formData = new FormData();
     formData.append("file", file);
+    
+    // Ajouter le metier_id si disponible
+    if (user?.metier_id) {
+      formData.append("metier_id", user.metier_id);
+    }
 
     try {
       setLoading(true);
-      const response = await api.post("/chef-metier/apprenants/import", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      
+      // Essayer différents endpoints
+      let response;
+      try {
+        response = await api.post("/chef-metier/apprenants/import", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } catch (err) {
+        // Fallback si le endpoint chef-metier n'existe pas
+        response = await api.post("/apprenants/import", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
       
       console.log("Réponse import:", response.data);
       
       const stats = response.data.stats || response.data.total_apprenants;
-      alert("✅ Importation réussie !");
+      
+      let message = "✅ Importation réussie !";
+      if (stats) {
+        if (typeof stats === 'number') {
+          message += `\n\n${stats} étudiant(s) importé(s)`;
+        } else if (stats.total) {
+          message += `\n\n${stats.total} étudiant(s) importé(s)`;
+          if (stats.success) message += `\n✓ Succès: ${stats.success}`;
+          if (stats.errors) message += `\n✗ Erreurs: ${stats.errors}`;
+        }
+      }
+      
+      alert(message);
       
       setFile(null);
       
@@ -131,7 +244,9 @@ const ImportEtudiant = () => {
       etudiant.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchMetier =
-      metierFilter === "all" || etudiant.metier?.nom === metierFilter;
+      metierFilter === "all" || 
+      etudiant.metier?.nom === metierFilter ||
+      etudiant.metier?.nom?.toLowerCase() === metierFilter.toLowerCase();
 
     return matchSearch && matchMetier;
   });
@@ -142,7 +257,7 @@ const ImportEtudiant = () => {
     total: etudiants.length,
     parMetier: metiers.length,
     recent: etudiants.filter(
-      (e) => new Date(e.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      (e) => e.created_at && new Date(e.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     ).length,
   };
 
@@ -164,11 +279,16 @@ const ImportEtudiant = () => {
       {/* En-tête */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800">
-          Gestion des Étudiants
+          Gestion de Mes Étudiants
         </h1>
         <p className="text-gray-600 mt-1">
-          Importez et gérez les étudiants par fichier Excel ou CSV
+          Importez et gérez les étudiants de votre métier par fichier Excel ou CSV
         </p>
+        {user?.metier_id && (
+          <p className="text-sm text-blue-600 mt-1">
+            📌 Filtré pour votre métier uniquement
+          </p>
+        )}
       </div>
 
       {/* Statistiques */}
@@ -269,6 +389,15 @@ const ImportEtudiant = () => {
             </a>
           </div>
         </form>
+
+        {/* Message informatif */}
+        {user?.metier_id && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              💡 Les étudiants importés seront automatiquement associés à votre métier
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Filtres et Recherche */}
@@ -361,19 +490,19 @@ const ImportEtudiant = () => {
                           <FiUser className="text-blue-600" size={20} />
                         </div>
                         <span className="text-sm font-medium text-gray-900">
-                          {etudiant.matricule}
+                          {etudiant.matricule || "N/A"}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {etudiant.name} {etudiant.prenom}
+                        {etudiant.name} {etudiant.prenom || ""}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-600">
                         <FiMail className="mr-2 text-gray-400" size={16} />
-                        {etudiant.email}
+                        {etudiant.email || "N/A"}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -387,22 +516,28 @@ const ImportEtudiant = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="flex items-center">
-                        <BsCalendar3 className="mr-2 text-gray-400" size={14} />
-                        {new Date(etudiant.created_at).toLocaleDateString("fr-FR")}
-                      </div>
+                      {etudiant.created_at ? (
+                        <div className="flex items-center">
+                          <BsCalendar3 className="mr-2 text-gray-400" size={14} />
+                          {new Date(etudiant.created_at).toLocaleDateString("fr-FR")}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">N/A</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex gap-2">
                         <button
                           className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded transition-colors"
                           title="Modifier"
+                          onClick={() => console.log("Modifier étudiant:", etudiant.id)}
                         >
                           <FaPen size={14} />
                         </button>
                         <button
                           className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded transition-colors"
                           title="Supprimer"
+                          onClick={() => console.log("Supprimer étudiant:", etudiant.id)}
                         >
                           <RiDeleteBin6Line size={16} />
                         </button>

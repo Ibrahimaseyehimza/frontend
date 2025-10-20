@@ -819,7 +819,7 @@ const TableauDeBordRH = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg flex items-center justify-between">
+      <div className="bg-dégradé rounded-2xl p-6 text-white shadow-lg flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold mb-1">Bienvenue, {user?.name}</h1>
           <p className="text-blue-100 text-sm">Tableau de bord - Ressources Humaines</p>
@@ -1012,7 +1012,7 @@ const RHDashboard = () => {
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
-        <div className="relative p-6 text-2xl bg-gradient-to-r from-blue-600 to-blue-700 font-bold shadow border-b border-blue-500 h-16 flex items-center justify-center">
+        <div className="relative p-6 text-2xl bg-dégradé font-bold shadow border-b border-blue-500 h-16 flex items-center justify-center">
           <img src="/STAGE LINK BLANC.png" alt="Stage Link" className="h-12 sm:h-16" />
           <button
             onClick={closeSidebar}
@@ -1027,7 +1027,7 @@ const RHDashboard = () => {
             to="." 
             end 
             className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-              isActive ? "bg-blue-100 text-blue-600 shadow-md" : "hover:bg-blue-100 hover:text-blue-600"
+              isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-100 hover:text-blue-600"
             }`}
           >
             <div className="flex items-center">
@@ -1039,7 +1039,7 @@ const RHDashboard = () => {
           <NavLink 
             to="maitres" 
             className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-              isActive ? "bg-blue-100 text-blue-600 shadow-md" : "hover:bg-blue-100 hover:text-blue-600"
+              isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-100 hover:text-blue-600"
             }`}
           >
             <div className="flex items-center">
@@ -1051,7 +1051,7 @@ const RHDashboard = () => {
           <NavLink 
             to="campagnes" 
             className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-              isActive ? "bg-blue-100 text-blue-600 shadow-md" : "hover:bg-blue-100 hover:text-blue-600"
+              isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-100 hover:text-blue-600"
             }`}
           >
             <div className="flex items-center">
@@ -1063,7 +1063,7 @@ const RHDashboard = () => {
           <NavLink 
             to="stages" 
             className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
-              isActive ? "bg-blue-100 text-blue-600 shadow-md" : "hover:bg-blue-100 hover:text-blue-600"
+              isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-100 hover:text-blue-600"
             }`}
           >
             <div className="flex items-center">
@@ -1098,7 +1098,7 @@ const RHDashboard = () => {
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center font-bold text-sm">
+              <div className="w-10 h-10 bg-dégradé text-white rounded-full flex items-center justify-center font-bold text-sm">
                 {getInitials(user?.name)}
               </div>
               <div className="hidden md:block text-left">

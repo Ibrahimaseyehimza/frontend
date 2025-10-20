@@ -816,8 +816,8 @@ const RhList = () => {
         api.get("/entreprises_global"),
       ]);
 
-      console.log("👉 Données RH:", rhRes.data);
-      console.log("👉 Données Entreprises:", entRes.data);
+      console.log("👉 Données RH:", rhRes.data.data);
+      console.log("👉 Données Entreprises:", entRes.data.data);
 
       setRhs(rhRes.data.data ?? []);
       setEntreprises(entRes.data.data ?? []);

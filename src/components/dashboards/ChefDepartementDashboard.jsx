@@ -13,6 +13,7 @@ import { SlPeople } from "react-icons/sl";
 import { FiLogOut, FiSearch, FiBell, FiSettings, FiUser } from "react-icons/fi";
 import { HiMenuAlt3 } from "react-icons/hi";
 import { IoClose } from "react-icons/io5";
+import NotificationBell from '../pages/NotificationBell';
 
 // Composant pour afficher les statistiques
 const StatCard = ({ title, value, subtitle, icon: Icon, iconBg, trend }) => (
@@ -149,6 +150,10 @@ const TableauDeBordHome = () => {
         api.get("/metiers"),
         etudiantsPromise
       ]);
+
+
+
+      
       
       // ========== EXTRACTION DES CAMPAGNES ==========
       let campagnes = [];
@@ -169,7 +174,7 @@ const TableauDeBordHome = () => {
         console.log("Tentative de récupération avec l'autre endpoint...");
         
         try {
-          const fallbackResponse = await api.get("/campagnes-global");
+          const fallbackResponse = await api.get("/campagnes_global");
           const fallbackData = fallbackResponse.data;
           
           if (Array.isArray(fallbackData)) {
@@ -536,6 +541,9 @@ const ChefDepartementDashboard = () => {
 
   const isHomePage = location.pathname === "/dashboard/chef-departement" || location.pathname === "/dashboard/chef-departement/";
 
+
+
+  
   return (
     <div className="flex h-screen bg-gray-50">
       {isSidebarOpen && (
@@ -550,8 +558,8 @@ const ChefDepartementDashboard = () => {
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
-        <div className="relative p-6 text-2xl bg-dégradé font-bold shadow border-b border-blue-500 h-14 flex items-center justify-center">
-          <img src="/STAGE LINK BLANC.png" alt="Stage Link" className="h-16 sm:h-20" />
+        <div className="relative p-6 text-2xl bg-dégradé font-bold shadow border-b border-blue-500 h-16 flex items-center justify-center">
+          <img src="/STAGE LINK BLANC.png" alt="Stage Link" className="h-16 sm:h-28" />
           <button
             onClick={closeSidebar}
             className="absolute right-4 top-1/2 -translate-y-1/2 lg:hidden text-white hover:text-gray-200"
@@ -613,7 +621,7 @@ const ChefDepartementDashboard = () => {
       </aside>
 
       <main className="flex-1 flex flex-col w-full lg:w-auto overflow-hidden">
-        <header className="bg-white shadow-sm p-3 sm:p-4 flex items-center gap-4 sticky top-0 z-10">
+        <header className="bg-white shadow-sm p-3 sm:p-4 flex items-center gap-4 sticky top-0 z-10 h-16">
           <button
             onClick={toggleSidebar}
             className="lg:hidden text-gray-700 hover:text-gray-900 flex-shrink-0"
@@ -621,7 +629,7 @@ const ChefDepartementDashboard = () => {
             <HiMenuAlt3 size={28} />
           </button>
 
-          <div className="flex-1 max-w-2xl justify-end hidden sm:flex mx-auto">
+          <div className="flex-1 max-w-2xl justify-end hidden sm:flex mx-auto mr-1">
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
@@ -629,9 +637,13 @@ const ChefDepartementDashboard = () => {
                 placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-50  pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-50  pl-10 pr-4 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
+            {/* 🔔 Notifications */}
+                        <div className="flex-shrink-0 h-10 ml-4">
+                          <NotificationBell />
+                        </div>
           </div>
 
           <div className="relative profile-menu-container flex-shrink-0">

@@ -439,7 +439,7 @@ const MesDemandes = () => {
           {/* Version Desktop - Tableau */}
           <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
             <table className="min-w-full">
-              <thead className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+              <thead className="bg-dégradé text-white">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Entreprise</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Campagne</th>

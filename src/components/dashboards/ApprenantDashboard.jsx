@@ -10,6 +10,8 @@ import { MdAssignmentTurnedIn, MdNoteAlt } from "react-icons/md";
 import { BsFileEarmarkText, BsCheckCircle, BsBuilding } from "react-icons/bs";
 import { FiLogOut, FiSearch, FiSettings, FiUser } from "react-icons/fi";
 import { HiMenuAlt3 } from "react-icons/hi";
+import NotificationBell from '../pages/NotificationBell';
+
 
 // Composant pour afficher les statistiques
 const StatCard = ({ title, value, subtitle, icon: Icon, iconBg }) => (
@@ -685,8 +687,8 @@ const ApprenantDashboard = () => {
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
-        <div className="relative p-6 text-2xl bg-dégradé font-bold shadow border-b border-blue-500 h-14 flex items-center justify-center">
-          <img src="/STAGE LINK BLANC.png" alt="Stage Link" className="h-16 sm:h-20" />
+        <div className="relative p-6 text-2xl bg-dégradé font-bold shadow border-b border-blue-500 h-16 flex items-center justify-center">
+          <img src="/STAGE LINK BLANC.png" alt="Stage Link" className="h-16 sm:h-28" />
           <button
             onClick={closeSidebar}
             className="absolute right-4 top-1/2 -translate-y-1/2 lg:hidden text-white hover:text-gray-200"
@@ -696,42 +698,42 @@ const ApprenantDashboard = () => {
         </div>
 
         <nav className="flex-1 p-3 sm:p-4 space-y-1 sm:space-y-2 overflow-y-auto">
-          <NavLink to="." end className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="." end className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <IoHomeOutline className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Tableau de bord</span>
             </div>
           </NavLink>
 
-          <NavLink to="campagnes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="campagnes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <TbBrandCampaignmonitor className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Campagnes</span>
             </div>
           </NavLink>
 
-          <NavLink to="mes-demandes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="mes-demandes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <MdAssignmentTurnedIn className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Mes demandes</span>
             </div>
           </NavLink>
 
-          <NavLink to="mon-stage" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="mon-stage" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Mon stage</span>
             </div>
           </NavLink>
 
-          <NavLink to="rapport" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="rapport" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <BsFileEarmarkText className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Rapport</span>
             </div>
           </NavLink>
 
-          <NavLink to="notes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="notes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <MdNoteAlt className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Notes</span>
@@ -743,7 +745,7 @@ const ApprenantDashboard = () => {
       {/* Main content */}
       <main className="flex-1 flex flex-col w-full lg:w-auto overflow-hidden">
         {/* Header */}
-        <header className="bg-white shadow-sm p-3 sm:p-4 flex items-center gap-4 sticky top-0 z-10">
+        <header className="bg-white shadow-sm p-3 sm:p-4 flex items-center gap-4 sticky top-0 z-10 h-16">
           <button
             onClick={toggleSidebar}
             className="lg:hidden text-gray-700 hover:text-gray-900 flex-shrink-0"
@@ -752,7 +754,7 @@ const ApprenantDashboard = () => {
           </button>
 
           {/* Barre de recherche */}
-          <div className="flex-1 max-w-2xl justify-end hidden sm:flex mx-auto">
+          <div className="flex-1 max-w-2xl justify-end hidden sm:flex mx-auto mr-1">
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
@@ -760,9 +762,13 @@ const ApprenantDashboard = () => {
                 placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-50 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-50 pl-10 pr-4 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
+            {/* 🔔 Notifications */}
+                  <div className="flex-shrink-0 h-10 ml-4">
+                        <NotificationBell />
+                        </div>
           </div>
 
           {/* Menu profil */}

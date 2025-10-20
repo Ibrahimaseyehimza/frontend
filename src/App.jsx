@@ -1024,7 +1024,12 @@ function App() {
                 <MaitreStageDashboard />
               </ProtectedRoute>
             }
-          />
+           >
+            <Route path="evaluations" element={<maitre_stageEvaluations />} />
+            <Route path="stagiairesmd" element={<maitre_stageStagiairesList />} />
+            <Route path="livrables" element={<maitre_stageLivrablesList />} />
+            <Route path="rapports" element={<maitre_stageRapportsList />} />
+          </Route>
 
           {/* ===========================
               RESSOURCES HUMAINES (RH) - ✅ CORRIGÉ

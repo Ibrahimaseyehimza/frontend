@@ -882,7 +882,7 @@ import DemandeList from "./components/pages/chef_de_metier/DemandeList";
 // ===========================
 // 🎓 Pages Maître de Stage & Apprenant
 // ===========================
-import MaitreStageList from "./components/pages/MaitreStageList";
+import MaitreStageList from "./components/pages/rh/MaitreStageList";
 import ImportEtudiant from "./components/pages/chef_de_metier/ImportEtudiant";
 import MesDemandes from "./components/pages/apprenant/MesDemande";
 import MonStage from "./components/pages/apprenant/MonStage";
@@ -891,8 +891,11 @@ import ListeCampagne from "./components/pages/apprenant/ListeCampagnes";
 // ===========================
 // 📋 Pages RH
 // ===========================
-import CampagneRH from "./components/pages/CampagneRH";
+import CampagneRH from "./components/pages/rh/CampagneRH";
 import StageList from "./components/pages/chef_de_metier/StageList";
+import Affectations from "./components/pages/chef_de_metier/Affectations";
+import RhNotifications from "./components/pages/rh/RhNotifications";
+import EtudiantsAffectes from "./components/pages/rh/EtudiantsAffectes";
 
 // ===========================
 // 🧭 PublicRoute : si déjà connecté → dashboard
@@ -1012,6 +1015,7 @@ function App() {
             <Route path="stages" element={<ChefMetierStageList />} />
             <Route path="apprenants" element={<ImportEtudiant />} />
             <Route path="demandes" element={<DemandeList />} />
+            <Route path="affectations" element={<Affectations />} />
           </Route>
 
           {/* ===========================
@@ -1050,6 +1054,8 @@ function App() {
             
             {/* ✅ Route pour les stages (si nécessaire) */}
             <Route path="stages" element={<StageList />} />
+            <Route path="notifications" element={<RhNotifications />} />
+            <Route path="affectations_rh" element={<EtudiantsAffectes />} />
           </Route>
 
           {/* ===========================

@@ -877,6 +877,7 @@ import CampagneList from "./components/pages/CampagneList";
 import ChefMetierCampagneList from "./components/pages/chef_de_metier/CampagneList";
 import ChefMetierEntrepriseList from "./components/pages/chef_de_metier/EntrepriseList";
 import ChefMetierStageList from "./components/pages/chef_de_metier/StageList";
+import DemandeList from "./components/pages/chef_de_metier/DemandeList";
 
 // ===========================
 // 🎓 Pages Maître de Stage & Apprenant
@@ -1010,6 +1011,7 @@ function App() {
             <Route path="entreprises" element={<ChefMetierEntrepriseList />} />
             <Route path="stages" element={<ChefMetierStageList />} />
             <Route path="apprenants" element={<ImportEtudiant />} />
+            <Route path="demandes" element={<DemandeList />} />
           </Route>
 
           {/* ===========================

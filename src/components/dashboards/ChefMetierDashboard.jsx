@@ -499,6 +499,17 @@ const TableauDeBordHome = () => {
           </NavLink>
           
           <NavLink 
+            to="demandes"
+            className="block p-6 bg-purple-50 hover:bg-purple-100 rounded-2xl text-left transition-all hover:shadow-md group"
+          >
+            <div className="text-purple-600 mb-3">
+              <FaRegUser size={32} />
+            </div>
+            <h4 className="font-semibold text-gray-900 mb-1">Demande</h4>
+            <p className="text-xs text-gray-600">Gérer les demandes</p>
+          </NavLink>
+          
+          <NavLink 
             to="stages"
             className="block p-6 bg-orange-50 hover:bg-orange-100 rounded-2xl text-left transition-all hover:shadow-md group"
           >
@@ -700,6 +711,20 @@ const ChefMetierDashboard = () => {
             <div className="flex items-center">
               <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Apprenants</span>
+            </div>
+          </NavLink>
+
+          <NavLink 
+            to="demandes" 
+            className={({ isActive }) => 
+              `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
+                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
+              }`
+            }
+          >
+            <div className="flex items-center">
+              <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
+              <span className="ml-2">Demandes</span>
             </div>
           </NavLink>
 

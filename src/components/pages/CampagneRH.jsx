@@ -546,42 +546,78 @@ const CampagnesRH = () => {
     }
   };
 
+  // const handleAction = async () => {
+  //   if (!selectedCampagne) return;
+
+  //   try {
+  //     if (actionType === "accepter") {
+  //       // Validation du nombre de places
+  //       const nbPlacesInt = parseInt(nbPlaces);
+  //       if (!nbPlaces || isNaN(nbPlacesInt) || nbPlacesInt <= 0) {
+  //         alert("⚠️ Veuillez entrer un nombre valide d'étudiants (supérieur à 0)");
+  //         return;
+  //       }
+
+  //       const res = await api.post(`/campagnes/${selectedCampagne.id}/accepter`, {
+  //         nb_places: nbPlacesInt,
+  //       });
+  //       alert(res.data.message || "✅ Campagne acceptée avec succès");
+  //     } else if (actionType === "refuser") {
+  //       // Message de refus facultatif
+  //       const res = await api.post(`/campagnes/${selectedCampagne.id}/refuser`, {
+  //         message_refus: messageRefus || "Aucune raison fournie",
+  //       });
+  //       alert(res.data.message || "❌ Campagne refusée");
+  //     }
+
+  //     // Réinitialisation et rechargement
+  //     setSelectedCampagne(null);
+  //     setActionType(null);
+  //     setNbPlaces("");
+  //     setMessageRefus("");
+  //     fetchCampagnes();
+  //   } catch (err) {
+  //     console.error("Erreur lors de l'action:", err);
+  //     alert("❌ Erreur: " + (err.response?.data?.message || err.message || "Erreur inconnue"));
+  //   }
+  // };
+
   const handleAction = async () => {
-    if (!selectedCampagne) return;
+  if (!selectedCampagne) return;
 
-    try {
-      if (actionType === "accepter") {
-        // Validation du nombre de places
-        const nbPlacesInt = parseInt(nbPlaces);
-        if (!nbPlaces || isNaN(nbPlacesInt) || nbPlacesInt <= 0) {
-          alert("⚠️ Veuillez entrer un nombre valide d'étudiants (supérieur à 0)");
-          return;
-        }
-
-        const res = await api.post(`/campagnes/${selectedCampagne.id}/accepter`, {
-          nb_places: nbPlacesInt,
-        });
-        alert(res.data.message || "✅ Campagne acceptée avec succès");
-      } else if (actionType === "refuser") {
-        // Message de refus facultatif
-        const res = await api.post(`/campagnes/${selectedCampagne.id}/refuser`, {
-          message_refus: messageRefus || "Aucune raison fournie",
-        });
-        alert(res.data.message || "❌ Campagne refusée");
+  try {
+    if (actionType === "accepter") {
+      // Validation du nombre de places
+      const nbPlacesInt = parseInt(nbPlaces);
+      if (!nbPlaces || isNaN(nbPlacesInt) || nbPlacesInt <= 0) {
+        alert("⚠️ Veuillez entrer un nombre valide d'étudiants (supérieur à 0)");
+        return;
       }
 
-      // Réinitialisation et rechargement
-      setSelectedCampagne(null);
-      setActionType(null);
-      setNbPlaces("");
-      setMessageRefus("");
-      fetchCampagnes();
-    } catch (err) {
-      console.error("Erreur lors de l'action:", err);
-      alert("❌ Erreur: " + (err.response?.data?.message || err.message || "Erreur inconnue"));
+      // ✅ CHANGEZ 'nb_places' en 'capacite_max'
+      const res = await api.post(`/campagnes/${selectedCampagne.id}/accepter`, {
+        capacite_max: nbPlacesInt, // ← ICI : changez nb_places en capacite_max
+      });
+      alert(res.data.message || "✅ Campagne acceptée avec succès");
+    } else if (actionType === "refuser") {
+      // Message de refus facultatif
+      const res = await api.post(`/campagnes/${selectedCampagne.id}/refuser`, {
+        message_refus: messageRefus || "Aucune raison fournie",
+      });
+      alert(res.data.message || "❌ Campagne refusée");
     }
-  };
 
+    // Réinitialisation et rechargement
+    setSelectedCampagne(null);
+    setActionType(null);
+    setNbPlaces("");
+    setMessageRefus("");
+    fetchCampagnes();
+  } catch (err) {
+    console.error("Erreur lors de l'action:", err);
+    alert("❌ Erreur: " + (err.response?.data?.message || err.message || "Erreur inconnue"));
+  }
+};
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("fr-FR", {
@@ -876,3 +912,4 @@ const CampagnesRH = () => {
 };
 
 export default CampagnesRH;
+

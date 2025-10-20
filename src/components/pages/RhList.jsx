@@ -813,7 +813,7 @@ const RhList = () => {
       setLoading(true);
       const [rhRes, entRes] = await Promise.all([
         api.get("/rhs"),
-        api.get("/entreprises"),
+        api.get("/entreprises_global"),
       ]);
 
       console.log("👉 Données RH:", rhRes.data);

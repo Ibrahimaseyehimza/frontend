@@ -715,6 +715,20 @@ const ChefMetierDashboard = () => {
           </NavLink>
 
           <NavLink 
+            to="affectations" 
+            className={({ isActive }) => 
+              `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${
+                isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"
+              }`
+            }
+          >
+            <div className="flex items-center">
+              <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
+              <span className="ml-2">Affectations</span>
+            </div>
+          </NavLink>
+
+          <NavLink 
             to="demandes" 
             className={({ isActive }) => 
               `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${

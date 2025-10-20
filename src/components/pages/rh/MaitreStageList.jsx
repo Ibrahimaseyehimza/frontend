@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../../api/axios";
+import api from "../../../api/axios";
 import { FiUser, FiMail, FiBriefcase, FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
 import { RiBuilding4Line } from "react-icons/ri";
 

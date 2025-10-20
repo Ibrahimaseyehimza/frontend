@@ -516,7 +516,7 @@
 
 
 import React, { useEffect, useState } from "react";
-import api from "../../api/axios";
+import api from "../../../api/axios";
 import { FiCalendar, FiUsers, FiCheck, FiXCircle } from "react-icons/fi";
 import { RiBuilding4Line } from "react-icons/ri";
 import { motion, AnimatePresence } from "framer-motion";

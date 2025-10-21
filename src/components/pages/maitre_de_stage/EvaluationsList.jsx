@@ -1,6 +1,6 @@
 // src/components/pages/EvaluationsList.jsx
 import React, { useEffect, useState } from "react";
-import api from "../../api/axios";
+import api from "../../../api/axios";
 
 const EvaluationsList = () => {
   const [stages, setStages] = useState([]);

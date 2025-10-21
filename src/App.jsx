@@ -898,6 +898,15 @@ import RhNotifications from "./components/pages/rh/RhNotifications";
 import EtudiantsAffectes from "./components/pages/rh/EtudiantsAffectes";
 
 // ===========================
+// 📋 Pages Maitre_de_stage
+// ===========================
+import MaitreStageEvaluationsList from "./components/pages/maitre_de_stage/EvaluationsList";
+import MaitreStageStagiairesList from "./components/pages/maitre_de_stage/StagiairesList"
+import MaitreStageLivablesList from "./components/pages/maitre_de_stage/LivrablesList";
+import MaitreStageRapportsList from "./components/pages/maitre_de_stage/RapportsList"
+
+
+// ===========================
 // 🧭 PublicRoute : si déjà connecté → dashboard
 // ===========================
 const PublicRoute = ({ children }) => {
@@ -1029,10 +1038,10 @@ function App() {
               </ProtectedRoute>
             }
            >
-            <Route path="evaluations" element={<maitre_stageEvaluations />} />
-            <Route path="stagiairesmd" element={<maitre_stageStagiairesList />} />
-            <Route path="livrables" element={<maitre_stageLivrablesList />} />
-            <Route path="rapports" element={<maitre_stageRapportsList />} />
+            <Route path="evaluations" element={<MaitreStageEvaluationsList />} />
+            <Route path="stagiairesmd" element={<MaitreStageStagiairesList />} />
+            <Route path="livrables" element={<MaitreStageLivablesList />} />
+            <Route path="rapports" element={<MaitreStageRapportsList />} />
           </Route>
 
           {/* ===========================

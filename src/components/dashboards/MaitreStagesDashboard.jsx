@@ -479,10 +479,17 @@ const MaitreStagesDashboard = () => {
             </div>
           </NavLink>
 
-          <NavLink to="stagiairesmd" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
+          <NavLink to="mes_stagiaires" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
             <div className="flex items-center">
               <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Mes Stagiaires</span>
+            </div>
+          </NavLink>
+
+          <NavLink to="etudiants_affectes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
+            <div className="flex items-center">
+              <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
+              <span className="ml-2">Etudiant Affecter</span>
             </div>
           </NavLink>
 

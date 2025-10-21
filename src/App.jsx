@@ -896,6 +896,8 @@ import StageList from "./components/pages/chef_de_metier/StageList";
 import Affectations from "./components/pages/chef_de_metier/Affectations";
 import RhNotifications from "./components/pages/rh/RhNotifications";
 import EtudiantsAffectes from "./components/pages/rh/EtudiantsAffectes";
+import EtudiantsAfectesAuStage from "./components/pages/maitre_de_stage/EtudiantsAffectesAuStage";
+import MesStagiaire from "./components/pages/maitre_de_stage/MesStagiaire";
 
 // ===========================
 // 🧭 PublicRoute : si déjà connecté → dashboard
@@ -1030,9 +1032,11 @@ function App() {
             }
            >
             <Route path="evaluations" element={<maitre_stageEvaluations />} />
-            <Route path="stagiairesmd" element={<maitre_stageStagiairesList />} />
+            <Route path="mes_stagiaires" element={<MesStagiaire />} />
             <Route path="livrables" element={<maitre_stageLivrablesList />} />
             <Route path="rapports" element={<maitre_stageRapportsList />} />
+            {/* <Route path="notifications" element={<MaitreNotifications />} /> */}
+            <Route path="etudiants_affectes" element={<EtudiantsAfectesAuStage />} />
           </Route>
 
           {/* ===========================

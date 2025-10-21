@@ -900,6 +900,15 @@ import EtudiantsAfectesAuStage from "./components/pages/maitre_de_stage/Etudiant
 import MesStagiaire from "./components/pages/maitre_de_stage/MesStagiaire";
 
 // ===========================
+// 📋 Pages Maitre_de_stage
+// ===========================
+import MaitreStageEvaluationsList from "./components/pages/maitre_de_stage/EvaluationsList";
+import MaitreStageStagiairesList from "./components/pages/maitre_de_stage/StagiairesList"
+import MaitreStageLivablesList from "./components/pages/maitre_de_stage/LivrablesList";
+import MaitreStageRapportsList from "./components/pages/maitre_de_stage/RapportsList"
+
+
+// ===========================
 // 🧭 PublicRoute : si déjà connecté → dashboard
 // ===========================
 const PublicRoute = ({ children }) => {

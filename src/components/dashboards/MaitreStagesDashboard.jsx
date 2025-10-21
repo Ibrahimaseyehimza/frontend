@@ -38,9 +38,13 @@ const TableauDeBordHome = () => {
     rapportsEnAttente: 0,
     moyenneNotes: 0,
     evaluationsCompletees: 0,
+    tachesAssignees: 0,
+    tachesTerminees: 0,
+    enAttente: 0,
   });
   
   const [stages, setStages] = useState([]);
+  const [livrables, setLivrables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -55,10 +59,22 @@ const TableauDeBordHome = () => {
       
       console.log("🔄 Chargement des données du maître de stage...");
       
-      const res = await api.get("/maitre-stage/stages");
-      const stagesData = res.data.data || res.data || [];
+      // Charger les stages
+      const resStages = await api.get("/maitre-stage/stages");
+      const stagesData = resStages.data.data || resStages.data || [];
+      
+      // Charger les livrables
+      let livrablesData = [];
+      try {
+        const resLivrables = await api.get("/maitre-stage/livrables");
+        livrablesData = resLivrables.data.data || resLivrables.data || [];
+      } catch (err) {
+        console.warn("⚠️ Impossible de charger les livrables:", err);
+        livrablesData = [];
+      }
       
       setStages(stagesData);
+      setLivrables(livrablesData);
       
       // Calculer les statistiques
       const stagesActifs = stagesData.filter(s => {
@@ -77,6 +93,10 @@ const TableauDeBordHome = () => {
       
       const evaluationsCompletees = stagesData.filter(s => s.note).length;
       
+      // Stats livrables
+      const livrablesEnAttente = livrablesData.filter(l => l.statut === 'À réviser').length;
+      const tachesTerminees = livrablesData.filter(l => l.statut === 'Approuvé' || l.statut === 'Révisé').length;
+      
       setStats({
         totalStages: stagesData.length,
         stagesActifs: stagesActifs,
@@ -84,10 +104,14 @@ const TableauDeBordHome = () => {
         rapportsEnAttente: rapportsEnAttente,
         moyenneNotes: moyenneNotes,
         evaluationsCompletees: evaluationsCompletees,
+        tachesAssignees: livrablesData.length,
+        tachesTerminees: tachesTerminees,
+        enAttente: livrablesEnAttente,
       });
       
       console.log("✅ Données chargées:", {
         stages: stagesData.length,
+        livrables: livrablesData.length,
         actifs: stagesActifs,
         moyenneNotes: moyenneNotes,
       });
@@ -96,6 +120,7 @@ const TableauDeBordHome = () => {
       console.error("❌ Erreur lors du chargement:", err);
       setError("Impossible de charger les données");
       setStages([]);
+      setLivrables([]);
     } finally {
       setLoading(false);
     }
@@ -142,6 +167,17 @@ const TableauDeBordHome = () => {
     }
   };
 
+  const handleLivrableAction = async (livrableId, action) => {
+    try {
+      await api.put(`/maitre-stage/livrables/${livrableId}/statut`, { statut: action });
+      alert(`✅ Livrable ${action === 'Approuvé' ? 'approuvé' : 'révisé'} avec succès !`);
+      fetchDashboardData();
+    } catch (err) {
+      console.error("Erreur action livrable:", err);
+      alert("❌ Erreur lors de l'action sur le livrable");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -174,223 +210,314 @@ const TableauDeBordHome = () => {
       {/* Bannière de bienvenue */}
       <div className="bg-dégradé rounded-2xl p-6 text-white shadow-lg flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Bienvenue, {user?.name}</h1>
-          <p className="text-blue-100 text-sm">Tableau de bord - Maître de Stage</p>
-          <p className="text-xs text-blue-200 mt-1">Gérez et supervisez vos stagiaires</p>
+          <h1 className="text-2xl font-bold mb-1">Bienvenue, {user?.prenom} {user?.name}</h1>
+          <p className="text-blue-100 text-sm">Tableau de bord - Maitre de Stage</p>
+          <p className="text-xs text-blue-200 mt-1">Encadrez et évaluez vos stagiaires</p>
         </div>
         <div className="hidden md:block">
-          <img src="/LOGO EIT.png" alt="" className="h-20" />
+          <img src="/LOGO EIT.png" alt="Logo" className="h-20" />
         </div>
       </div>
 
       {/* Statistiques en cartes */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Stages"
-          value={stats.totalStages}
-          subtitle="Stages supervisés"
-          icon={MdOutlineWorkOutline}
+          title="Stagiaires actifs"
+          value={stats.stagesActifs}
+          subtitle={`${stats.stagesActifs} actifs`}
+          icon={BsPerson}
           iconBg="bg-gradient-to-br from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Stages Actifs"
-          value={stats.stagesActifs}
-          subtitle="En cours actuellement"
+          title="Tâches Assignées"
+          value={stats.tachesAssignees}
+          subtitle={`${stats.tachesTerminees} terminées`}
           icon={MdAssignmentTurnedIn}
           iconBg="bg-gradient-to-br from-green-500 to-green-600"
         />
         <StatCard
-          title="Moyenne Notes"
-          value={stats.moyenneNotes}
-          subtitle="Note moyenne attribuée"
-          icon={BsFileEarmarkText}
-          iconBg="bg-gradient-to-br from-purple-500 to-purple-600"
+          title="En Attente"
+          value={stats.enAttente}
+          subtitle="À superviser"
+          icon={BsCalendar3}
+          iconBg="bg-gradient-to-br from-yellow-500 to-yellow-600"
         />
         <StatCard
-          title="Rapports en attente"
-          value={stats.rapportsEnAttente}
-          subtitle="À évaluer"
+          title="Performance"
+          value={stats.moyenneNotes}
+          subtitle="Note moyenne"
           icon={FaRegUser}
-          iconBg="bg-gradient-to-br from-orange-500 to-orange-600"
+          iconBg="bg-gradient-to-br from-purple-500 to-purple-600"
         />
       </div>
 
-      {/* Liste des stagiaires */}
+      {/* Grille à 2 colonnes: Stagiaires + Actions/Livrables */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Colonne Gauche: Mes Stagiaires */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-gray-900">Mes Stagiaires</h2>
+            <button className="text-sm text-blue-600 hover:underline">Voir tous</button>
+          </div>
+
+          {stages.length > 0 ? (
+            <div className="space-y-3">
+              {stages.slice(0, 3).map((stage) => (
+                <div
+                  key={stage.id}
+                  className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-md flex-shrink-0">
+                    {stage.etudiant?.prenom?.charAt(0) || 'E'}
+                    {stage.etudiant?.name?.charAt(0) || 'T'}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      {stage.etudiant?.prenom} {stage.etudiant?.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 truncate">
+                      {stage.poste || 'Développeur Web'}
+                    </p>
+                    <p className="text-xs text-gray-500">{stage.etudiant?.email || 'email@example.com'}</p>
+                  </div>
+                  
+                  <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    stage.date_fin && new Date(stage.date_fin) > new Date()
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {stage.date_fin && new Date(stage.date_fin) > new Date() ? 'Actif' : 'Terminé'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <BsPerson size={40} className="mx-auto mb-2 text-gray-300" />
+              <p>Aucun stagiaire</p>
+            </div>
+          )}
+        </div>
+
+        {/* Colonne Droite: Actions Rapides + Livrables */}
+        <div className="space-y-6">
+          {/* Actions Rapides */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Actions Rapides</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <button className="flex flex-col items-center gap-2 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                  <MdAssignmentTurnedIn className="text-white" size={20} />
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-blue-900">Assigner Tâche</p>
+                  <p className="text-xs text-blue-600">Nouvelle mission</p>
+                </div>
+              </button>
+
+              <button className="flex flex-col items-center gap-2 p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                  <BsPerson className="text-white" size={20} />
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-green-900">Évaluer</p>
+                  <p className="text-xs text-green-600">Performance stagiaire</p>
+                </div>
+              </button>
+
+              <button className="flex flex-col items-center gap-2 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
+                  <BsFileEarmarkText className="text-white" size={20} />
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-purple-900">Message Groupe</p>
+                  <p className="text-xs text-purple-600">Tous les stagiaires</p>
+                </div>
+              </button>
+
+              <button className="flex flex-col items-center gap-2 p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
+                  <FaDownload className="text-white" size={18} />
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-orange-900">Rapport</p>
+                  <p className="text-xs text-orange-600">Suivi mensuel</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Livrables à Réviser */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Livrables à Réviser</h2>
+                <span className="inline-block mt-1 px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                  {stats.enAttente} en attente
+                </span>
+              </div>
+            </div>
+
+            {livrables.filter(l => l.statut === 'À réviser').length > 0 ? (
+              <div className="space-y-3">
+                {livrables.filter(l => l.statut === 'À réviser').slice(0, 2).map((livrable) => (
+                  <div key={livrable.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-sm">{livrable.titre}</h3>
+                        <p className="text-xs text-gray-600 mt-1">Par: {livrable.etudiant?.prenom} {livrable.etudiant?.name}</p>
+                      </div>
+                      <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded">
+                        À réviser
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                      <BsFileEarmarkText size={14} />
+                      <span>{livrable.type || 'Document'}</span>
+                      <span>•</span>
+                      <span>Soumis le {new Date(livrable.date_soumission || Date.now()).toLocaleDateString('fr-FR')}</span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleLivrableAction(livrable.id, 'Révisé')}
+                        className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
+                      >
+                        Réviser
+                      </button>
+                      <button 
+                        onClick={() => handleDownload(livrable.stage_id)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-xs"
+                      >
+                        <FaDownload />
+                      </button>
+                      <button 
+                        onClick={() => handleLivrableAction(livrable.id, 'Approuvé')}
+                        className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs"
+                      >
+                        Approuver
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <BsFileEarmarkText size={40} className="mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">Aucun livrable en attente</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Évaluations Section */}
       <div className="bg-white rounded-2xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900 uppercase tracking-wide border-b-4 border-blue-600 pb-2 inline-block">
-            Mes Stagiaires
-          </h2>
-          <button
-            onClick={fetchDashboardData}
-            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Actualiser
+          <h2 className="text-lg font-bold text-gray-900">Évaluations</h2>
+          <button className="px-4 py-2 bg-dégradé text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+            Planifier évaluations
           </button>
         </div>
 
-        {stages.length > 0 ? (
-          <div className="space-y-4">
-            {stages.map((stage) => (
-              <div
-                key={stage.id}
-                className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
-              >
-                {/* En-tête */}
-                <div className="flex flex-wrap items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-md">
-                      {stage.etudiant?.prenom?.charAt(0) || 'E'}
-                      {stage.etudiant?.name?.charAt(0) || 'T'}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-600">Évaluations complétées</span>
+            <span className="text-sm font-bold text-gray-900">{stats.evaluationsCompletees}/{stats.totalStages}</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-green-500 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${stats.totalStages > 0 ? (stats.evaluationsCompletees / stats.totalStages) * 100 : 0}%` }}
+            ></div>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-600">Note moyenne donnée</span>
+            <span className="text-sm font-bold text-gray-900">⭐ {stats.moyenneNotes}/5</span>
+          </div>
+        </div>
+
+        {stages.filter(s => !s.note).length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h3 className="font-semibold text-yellow-800 mb-3 text-sm">Stagiaires à évaluer</h3>
+            <div className="space-y-2">
+              {stages.filter(s => !s.note).slice(0, 3).map((stage) => (
+                <div key={stage.id} className="flex items-center justify-between bg-white p-3 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      {stage.etudiant?.prenom?.charAt(0)}{stage.etudiant?.name?.charAt(0)}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900">
+                      <p className="font-semibold text-sm text-gray-900">
                         {stage.etudiant?.prenom} {stage.etudiant?.name}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {stage.etudiant?.email || 'etudiant@isep-thies.edu.sn'}
                       </p>
+                      <p className="text-xs text-gray-500">{stage.poste || 'Stagiaire'}</p>
                     </div>
                   </div>
-
-                  {stage.note ? (
-                    <div className="flex items-center gap-2 bg-green-100 px-4 py-2 rounded-full">
-                      <span className="text-green-700 font-bold text-lg">{stage.note}/20</span>
-                      <span className="text-green-600 text-xs">✓ Évalué</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 bg-yellow-100 px-4 py-2 rounded-full">
-                      <span className="text-yellow-700 text-sm font-semibold">En attente</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Informations du stage */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 pb-4 border-b border-gray-100">
-                  <div className="flex items-start gap-2">
-                    <BsBuilding className="text-blue-600 mt-1" size={18} />
-                    <div>
-                      <div className="text-xs text-gray-500 font-medium">Entreprise</div>
-                      <div className="text-sm font-semibold text-gray-800">
-                        {stage.entreprise?.nom || 'Non spécifiée'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <BsCalendar3 className="text-green-600 mt-1" size={18} />
-                    <div>
-                      <div className="text-xs text-gray-500 font-medium">Dates</div>
-                      <div className="text-sm font-semibold text-gray-800">
-                        {stage.date_debut && stage.date_fin
-                          ? `${new Date(stage.date_debut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })} → ${new Date(stage.date_fin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}`
-                          : 'Non définies'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <BsFileEarmarkText className="text-purple-600 mt-1" size={18} />
-                    <div>
-                      <div className="text-xs text-gray-500 font-medium">Rapport</div>
-                      <div className="text-sm font-semibold text-gray-800">
-                        {stage.rapport_soumis ? (
-                          <span className="text-green-600">✓ Soumis</span>
-                        ) : (
-                          <span className="text-gray-400">En attente</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <BsPerson className="text-orange-600 mt-1" size={18} />
-                    <div>
-                      <div className="text-xs text-gray-500 font-medium">Poste</div>
-                      <div className="text-sm font-semibold text-gray-800">
-                        {stage.poste || 'Stagiaire'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => handleDownload(stage.id)}
-                    className="flex-1 min-w-[150px] bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-                    disabled={!stage.rapport_soumis}
-                  >
-                    <FaDownload size={16} />
-                    <span>Télécharger rapport</span>
+                  <button className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">
+                    Évaluer
                   </button>
-
-                  <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
-                    <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                      Note :
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="20"
-                      step="0.5"
-                      className="w-20 px-3 py-1.5 border border-gray-300 rounded-md text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      defaultValue={stage.note || ""}
-                      placeholder="0-20"
-                      onBlur={(e) => {
-                        if (e.target.value) {
-                          handleNoteChange(stage.id, e.target.value);
-                        }
-                      }}
-                    />
-                    <span className="text-gray-500 text-sm">/20</span>
-                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Tâches Assignées */}
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-gray-900">Tâches Assignées</h2>
+          <button className="px-4 py-2 bg-dégradé text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2">
+            <MdAssignmentTurnedIn size={18} />
+            <span>Nouvelle tâche</span>
+          </button>
+        </div>
+
+        {livrables.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {livrables.map((livrable) => (
+              <div key={livrable.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900 text-sm flex-1">{livrable.titre}</h3>
+                  <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                    livrable.statut === 'En cours' ? 'bg-yellow-100 text-yellow-700' :
+                    livrable.statut === 'Approuvé' ? 'bg-green-100 text-green-700' :
+                    livrable.statut === 'Révisé' ? 'bg-blue-100 text-blue-700' :
+                    'bg-orange-100 text-orange-700'
+                  }`}>
+                    {livrable.statut}
+                  </span>
+                </div>
+                
+                <p className="text-xs text-gray-600 mb-2">
+                  Assignée à: <span className="font-semibold">{livrable.etudiant?.prenom} {livrable.etudiant?.name}</span>
+                </p>
+                
+                {livrable.priorite && (
+                  <span className={`inline-block px-2 py-1 text-xs font-semibold rounded ${
+                    livrable.priorite === 'Haute' ? 'bg-red-100 text-red-700' :
+                    livrable.priorite === 'Moyenne' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                    {livrable.priorite}
+                  </span>
+                )}
               </div>
             ))}
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="inline-block p-6 bg-gray-50 rounded-full mb-4">
-              <BsPerson size={48} className="text-gray-400" />
-            </div>
-            <p className="text-gray-500 font-medium">Aucun stagiaire assigné</p>
-            <p className="text-gray-400 text-sm mt-2">
-              Les stagiaires apparaîtront ici une fois assignés
-            </p>
+            <MdAssignmentTurnedIn size={48} className="mx-auto mb-4 text-gray-300" />
+            <p className="text-gray-500">Aucune tâche assignée</p>
+            <p className="text-xs text-gray-400 mt-2">Créez des tâches pour vos stagiaires</p>
           </div>
         )}
-      </div>
-
-      {/* Statistiques d'évaluation */}
-      <div className="bg-white rounded-2xl shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-          <span className="mr-2">📊</span>
-          Statistiques d'évaluation
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-5 rounded-xl">
-            <p className="text-3xl font-bold text-blue-600 mb-1">
-              {stats.totalStages}
-            </p>
-            <p className="text-sm text-gray-600">Total stagiaires supervisés</p>
-          </div>
-          <div className="bg-gradient-to-r from-green-50 to-green-100 p-5 rounded-xl">
-            <p className="text-3xl font-bold text-green-600 mb-1">
-              {stats.evaluationsCompletees}
-            </p>
-            <p className="text-sm text-gray-600">Évaluations complétées</p>
-          </div>
-          <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-5 rounded-xl">
-            <p className="text-3xl font-bold text-purple-600 mb-1">
-              {stats.moyenneNotes} ★
-            </p>
-            <p className="text-sm text-gray-600">Note moyenne attribuée</p>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -406,7 +533,7 @@ const MaitreStagesDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const getInitials = (name) => {
-    if (!name) return "MS";
+    if (!name) return "";
     const parts = name.trim().split(" ");
     if (parts.length >= 2) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
@@ -461,7 +588,7 @@ const MaitreStagesDashboard = () => {
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
-        <div className="relative p-6 text-2xl bg-dégradé font-bold shadow border-b border-blue-500 h-16 flex items-center justify-center ">
+        <div className="relative p-6 text-2xl bg-dégradé font-bold shadow border-b border-blue-500 h-16 flex items-center justify-center">
           <img src="/STAGE LINK BLANC.png" alt="Stage Link" className="h-16 sm:h-28" />
           <button
             onClick={closeSidebar}
@@ -472,7 +599,7 @@ const MaitreStagesDashboard = () => {
         </div>
 
         <nav className="flex-1 p-3 sm:p-4 space-y-1 sm:space-y-2 overflow-y-auto">
-          <NavLink to="." end className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
+          <NavLink to="." end className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <IoHomeOutline className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Tableau de bord</span>
@@ -500,14 +627,14 @@ const MaitreStagesDashboard = () => {
             </div>
           </NavLink>
 
-          <NavLink to="rapports" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
+          <NavLink to="rapports" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <MdAssignmentTurnedIn className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Rapports</span>
             </div>
           </NavLink>
 
-          <NavLink to="livrables" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
+          <NavLink to="livrables" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <GiVendingMachine className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Livrables</span>
@@ -538,10 +665,10 @@ const MaitreStagesDashboard = () => {
                 className="w-50 pl-10 pr-4 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-             {/* 🔔 Notifications */}
-                        <div className="flex-shrink-0 h-10 ml-4">
-                          <NotificationBell />
-                        </div>
+            {/* 🔔 Notifications */}
+            <div className="flex-shrink-0 h-10 ml-4">
+              <NotificationBell />
+            </div>
           </div>
 
           <div className="relative profile-menu-container flex-shrink-0">
@@ -550,11 +677,11 @@ const MaitreStagesDashboard = () => {
               className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <div className="w-10 h-10 bg-dégradé text-white rounded-full flex items-center justify-center font-bold text-sm">
-                {getInitials(user?.name)}
+                {getInitials(user?.prenom)}{getInitials(user?.name)}
               </div>
               <div className="hidden md:block text-left">
-                <p className="text-sm font-semibold text-gray-800">{user?.name}</p>
-                <p className="text-xs text-gray-500">Maître de Stage</p>
+                <p className="text-sm font-semibold text-gray-800">{user?.prenom}  {user?.name}</p>
+                <p className="text-xs text-gray-500">Maitre de Stage</p>
               </div>
             </button>
 
@@ -562,7 +689,7 @@ const MaitreStagesDashboard = () => {
               <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                 <div className="px-4 py-3 border-b border-gray-200">
                   <p className="text-sm font-semibold text-gray-800">{user?.name}</p>
-                  <p className="text-xs text-gray-500">{user?.email || 'maitre@entreprise.com'}</p>
+                  <p className="text-xs text-gray-500">{user?.email || 'tuteur@entreprise.com'}</p>
                 </div>
                 
                 <button

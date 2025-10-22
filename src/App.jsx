@@ -843,7 +843,7 @@
 // ===========================
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // ===========================
@@ -903,9 +903,10 @@ import MesStagiaire from "./components/pages/maitre_de_stage/MesStagiaire";
 // 📋 Pages Maitre_de_stage
 // ===========================
 import MaitreStageEvaluationsList from "./components/pages/maitre_de_stage/EvaluationsList";
-import MaitreStageStagiairesList from "./components/pages/maitre_de_stage/StagiairesList"
+import MaitreStageMesStagiaire from "./components/pages/maitre_de_stage/MesStagiaire";
 import MaitreStageLivablesList from "./components/pages/maitre_de_stage/LivrablesList";
-import MaitreStageRapportsList from "./components/pages/maitre_de_stage/RapportsList"
+import MaitreStageRapportsList from "./components/pages/maitre_de_stage/RapportsList";
+import MaitreStageTachesMaitre from "./components/pages/maitre_de_stage/TachesMaitre";
 
 
 // ===========================
@@ -1040,12 +1041,13 @@ function App() {
               </ProtectedRoute>
             }
            >
-            <Route path="evaluations" element={<maitre_stageEvaluations />} />
-            <Route path="mes_stagiaires" element={<MesStagiaire />} />
-            <Route path="livrables" element={<maitre_stageLivrablesList />} />
-            <Route path="rapports" element={<maitre_stageRapportsList />} />
+            <Route path="evaluations" element={<MaitreStageEvaluationsList />} />
+            <Route path="mes_stagiaires" element={<MaitreStageMesStagiaire />} />
+            <Route path="livrables" element={<MaitreStageLivablesList />} />
+            <Route path="rapports" element={<MaitreStageRapportsList />} />
             {/* <Route path="notifications" element={<MaitreNotifications />} /> */}
             <Route path="etudiants_affectes" element={<EtudiantsAfectesAuStage />} />
+            <Route path="taches_maitre" element={<MaitreStageTachesMaitre />} />
           </Route>
 
           {/* ===========================

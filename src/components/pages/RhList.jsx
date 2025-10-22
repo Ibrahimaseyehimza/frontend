@@ -194,7 +194,7 @@ const RhList = () => {
                 entreprise_id: "",
               });
             }}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 flex items-center gap-2 shadow-lg transition-all"
+            className="bg-dégradé text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 flex items-center gap-2 shadow-lg transition-all"
           >
             <FiUserPlus size={20} />
             <span>Nouveau RH</span>

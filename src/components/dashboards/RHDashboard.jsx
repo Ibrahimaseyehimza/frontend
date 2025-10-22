@@ -1,7 +1,7 @@
 // components/dashboards/RHDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
 import { IoHomeOutline, IoClose } from "react-icons/io5";
 import { FaRegUser } from "react-icons/fa6";

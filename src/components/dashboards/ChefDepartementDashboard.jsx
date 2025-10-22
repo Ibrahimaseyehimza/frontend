@@ -1,7 +1,7 @@
 // src/components/dashboards/ChefDepartementDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
 import { IoHomeOutline } from "react-icons/io5";
 import { MdOutlineWorkOutline } from "react-icons/md";

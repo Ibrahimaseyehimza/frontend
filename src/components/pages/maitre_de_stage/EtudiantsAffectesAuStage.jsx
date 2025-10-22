@@ -88,111 +88,182 @@
 
 
 import React, { useEffect, useState } from "react";
-// import axios from "axios";
 import axios from "../../../api/axios";
 
-const EtudiantsAfectesAuStage = () => {
-  const [etudiants, setEtudiants] = useState([]);
+const EtudiantsAffectesAuStage = () => {
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [entreprise, setEntreprise] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchEtudiants = async () => {
+    const fetchNotifications = async () => {
       try {
-        const token = localStorage.getItem("token"); // 🔐 récupère le token du maître
-        const response = await axios.get("/maitre-stage/etudiants-affectes", {
+        const token = localStorage.getItem("token");
+        
+        // 🔔 Route pour les nouvelles affectations uniquement
+        const response = await axios.get("/maitre-stage/notifications-affectations", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        if (response.data.success) {
-          setEtudiants(response.data.etudiants);
-          setEntreprise(response.data.entreprise);
+        console.log("🔔 Notifications:", response.data);
+
+        if (response.data.success || response.data) {
+          setNotifications(response.data.notifications || response.data.data || []);
         } else {
-          setError("Erreur de récupération des données");
+          setError("Erreur de récupération des notifications");
         }
       } catch (err) {
-        console.error("Erreur:", err);
-        setError("Impossible de charger les données.");
+        console.error("❌ Erreur:", err);
+        setError(err.response?.data?.message || "Impossible de charger les notifications.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEtudiants();
+    fetchNotifications();
   }, []);
+
+  const marquerCommeLue = async (notificationId) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(`/maitre-stage/notifications/${notificationId}/lire`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Mettre à jour l'état local
+      setNotifications(notifications.map(notif => 
+        notif.id === notificationId ? { ...notif, lue: true } : notif
+      ));
+    } catch (err) {
+      console.error("Erreur lors du marquage:", err);
+    }
+  };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[60vh]">
-        <p className="text-gray-500 text-lg animate-pulse">Chargement des notifications...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500 text-lg">Chargement des notifications...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center text-red-600 mt-10 text-lg">
-        ⚠️ {error}
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <p className="text-red-600 text-lg font-medium">⚠️ {error}</p>
+        </div>
       </div>
     );
   }
 
+  const notificationsNonLues = notifications.filter(n => !n.lue);
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <div className="bg-white p-6 rounded-2xl shadow-lg">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          🔔 Notifications – Étudiants affectés ({entreprise})
-        </h2>
+        {/* 🔹 En-tête */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">
+            🔔 Notifications d'affectation
+          </h2>
+          {notificationsNonLues.length > 0 && (
+            <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+              {notificationsNonLues.length} nouvelle{notificationsNonLues.length > 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
 
-        {etudiants.length === 0 ? (
-          <p className="text-gray-600">Aucun étudiant ne vous a encore été affecté.</p>
+        {/* 🔹 Liste des notifications */}
+        {!notifications || notifications.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📭</div>
+            <p className="text-gray-600 text-lg">
+              Aucune nouvelle affectation pour le moment.
+            </p>
+          </div>
         ) : (
-          <div className="overflow-x-auto mt-4">
-            <table className="min-w-full border border-gray-200 rounded-xl">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="text-left py-3 px-4">#</th>
-                  <th className="text-left py-3 px-4">Nom complet</th>
-                  <th className="text-left py-3 px-4">Email</th>
-                  <th className="text-left py-3 px-4">Adresse</th>
-                  <th className="text-left py-3 px-4">Campagne</th>
-                  <th className="text-left py-3 px-4">Statut</th>
-                </tr>
-              </thead>
-              <tbody>
-                {etudiants.map((etudiant, index) => (
-                  <tr
-                    key={etudiant.id}
-                    className="border-b hover:bg-gray-50 transition"
-                  >
-                    <td className="py-3 px-4">{index + 1}</td>
-                    <td className="py-3 px-4 font-medium">
-                      {etudiant.prenom} {etudiant.nom}
-                    </td>
-                    <td className="py-3 px-4">{etudiant.email}</td>
-                    <td className="py-3 px-4">
-                      {etudiant.adresse_1}
-                      {etudiant.adresse_2 ? `, ${etudiant.adresse_2}` : ""}
-                    </td>
-                    <td className="py-3 px-4">{etudiant.campagne}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-3 py-1 text-sm font-semibold rounded-full ${
-                          etudiant.statut === "acceptee"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {etudiant.statut}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-4">
+            {notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`p-4 rounded-lg border-l-4 transition ${
+                  notification.lue
+                    ? "bg-gray-50 border-gray-300"
+                    : "bg-blue-50 border-blue-500"
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      {!notification.lue && (
+                        <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      )}
+                      <h3 className="font-semibold text-gray-900">
+                        {notification.titre || "Nouvelle affectation"}
+                      </h3>
+                    </div>
+                    
+                    <p className="text-gray-700 mb-2">
+                      {notification.message || 
+                        `Un nouvel étudiant vous a été affecté : ${notification.etudiant?.prenom} ${notification.etudiant?.nom}`
+                      }
+                    </p>
+
+                    {notification.etudiant && (
+                      <div className="bg-white p-3 rounded border border-gray-200 mt-3">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-500">Nom:</span>
+                            <span className="ml-2 font-medium">
+                              {notification.etudiant.prenom} {notification.etudiant.nom}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Email:</span>
+                            <span className="ml-2 text-blue-600">
+                              {notification.etudiant.email}
+                            </span>
+                          </div>
+                          {notification.etudiant.campagne && (
+                            <div>
+                              <span className="text-gray-500">Campagne:</span>
+                              <span className="ml-2">{notification.etudiant.campagne}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-500 mt-2">
+                      {new Date(notification.created_at).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+
+                  {!notification.lue && (
+                    <button
+                      onClick={() => marquerCommeLue(notification.id)}
+                      className="ml-4 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Marquer comme lue
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -200,4 +271,4 @@ const EtudiantsAfectesAuStage = () => {
   );
 };
 
-export default EtudiantsAfectesAuStage;
+export default EtudiantsAffectesAuStage;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FiDownload, FiSend, FiUsers, FiBriefcase, FiAlertCircle, FiFilter } from "react-icons/fi";
-import { useAuth } from "../../../AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 import api from "../../../api/axios"
 
 const Affectations = () => {

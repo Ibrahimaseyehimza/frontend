@@ -14,6 +14,7 @@ const ListeCampagne = () => {
   const [entrepriseId, setEntrepriseId] = useState("");
   const [adresse1, setAdresse1] = useState("");
   const [adresse2, setAdresse2] = useState("");
+  const [telephone, setTelephone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -28,7 +29,8 @@ const ListeCampagne = () => {
         console.log("🔍 Token:", token ? "Présent" : "Absent");
         
         // ✅ CORRECTION : Pas de /v1 car déjà dans baseURL
-        const response = await api.get("/apprenant/campagnes", {
+        const response = await api.get("/route_campagne_apprenant", {
+        // const response = await api.get("/campagnes/apprenant", {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -99,7 +101,7 @@ const ListeCampagne = () => {
   const handlePostuler = async (e) => {
     e.preventDefault();
     
-    if (!selectedCampagne || !entrepriseId || !adresse1) {
+    if (!selectedCampagne || !entrepriseId || !adresse1 || !telephone) {
       setMessage("⚠️ Veuillez remplir tous les champs requis.");
       return;
     }
@@ -113,6 +115,7 @@ const ListeCampagne = () => {
         entreprise_id: entrepriseId,
         adresse_1: adresse1,
         adresse_2: adresse2,
+        telephone: telephone,
       });
       
       // ✅ CORRECTION : Ajout du préfixe /v1
@@ -121,6 +124,7 @@ const ListeCampagne = () => {
         entreprise_id: entrepriseId,
         adresse_1: adresse1,
         adresse_2: adresse2,
+        telephone: telephone,
       }, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -136,6 +140,8 @@ const ListeCampagne = () => {
       setSelectedCampagne(null);
       setAdresse1("");
       setAdresse2("");
+      setAdresse2("");
+      setTelephone("");
       setEntrepriseId("");
       
       // Masquer le message après 5 secondes
@@ -392,6 +398,20 @@ const ListeCampagne = () => {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Téléphone *
+                </label>
+                <input
+                  type="tel"
+                  value={telephone}
+                  onChange={(e) => setTelephone(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="+221 XX XXX XX XX"
+                  required
+                />
+              </div>
+
               <div className="flex gap-3 mt-6 pt-4 border-t">
                 <button
                   type="button"
@@ -400,6 +420,7 @@ const ListeCampagne = () => {
                     setEntrepriseId("");
                     setAdresse1("");
                     setAdresse2("");
+                    setTelephone(""); ;
                   }}
                   className="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                 >

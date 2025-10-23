@@ -376,7 +376,7 @@ const CampagneList = () => {
                   <div className="space-y-1 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
                       <span className="text-green-500">✓</span>
-                      <span>Moyenne générale ≥ 12/20</span>
+                      <span>Moyenne générale ≥ 14/20</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-green-500">✓</span>
@@ -395,10 +395,10 @@ const CampagneList = () => {
                     <FiEye size={18} />
                     <span>Voir détails</span>
                   </button>
-                  <button className="flex-1 min-w-[140px] bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                  {/* <button className="flex-1 min-w-[140px] bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center gap-2">
                     <FiBarChart2 size={18} />
                     <span>Statistiques</span>
-                  </button>
+                  </button> */}
                   <button className="flex-1 min-w-[140px] bg-green-600 text-white py-2.5 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center justify-center gap-2">
                     <FiUsers size={18} />
                     <span>Voir étudiants</span>

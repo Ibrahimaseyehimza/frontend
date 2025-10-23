@@ -533,3 +533,285 @@ const StageList = () => {
 };
 
 export default StageList;
+
+
+
+
+
+
+
+
+
+
+
+
+
+// DONNER FICTIF
+
+
+
+// import React, { useEffect, useState } from "react";
+// import api from "../../../api/axios";
+// import {
+//   FiEye,
+//   FiDownload,
+//   FiX,
+//   FiCalendar,
+//   FiUser,
+//   FiBriefcase,
+//   FiFileText,
+//   FiClock,
+//   FiMapPin,
+//   FiTarget,
+//   FiStar,
+//   FiBookOpen,
+// } from "react-icons/fi";
+// import { BsBuilding, BsCalendar3 } from "react-icons/bs";
+
+// const StageListChefDepartement = () => {
+//   const [stages, setStages] = useState([]);
+//   const [campagnes, setCampagnes] = useState([]);
+//   const [selectedStage, setSelectedStage] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [searchTerm, setSearchTerm] = useState("");
+//   const [campagneFilter, setCampagneFilter] = useState("all");
+//   const [metierFilter, setMetierFilter] = useState("all");
+
+//   useEffect(() => {
+//     fetchData();
+//   }, []);
+
+//   const fetchData = async () => {
+//     try {
+//       setLoading(true);
+//       const [stagesRes, campagnesRes] = await Promise.all([
+//         api.get("chef-de-departement/stages"),
+//         api.get("/campagnes"),
+//       ]);
+
+//       const realStages = stagesRes.data.data ?? [];
+
+//       // ✅ Ajouter un apprenant fictif avec progression et note
+//       const fakeStage = {
+//         id: 999,
+//         titre: "Développement d'une application de gestion interne",
+//         campagne_id: campagnesRes.data.data?.[0]?.id || 1,
+//         campagne: campagnesRes.data.data?.[0] || { titre: "Campagne 2025" },
+//         entreprise: { nom: "Tech Innov SARL" },
+//         etudiant: {
+//           name: "Rama Ndaw",
+//           prenom: "Rama",
+//           email: "rama.ndaw@isep.sn",
+//           metier: "DWM",
+//         },
+//         date_debut: "2025-09-01",
+//         date_fin: "2025-12-31",
+//         progression: 75,
+//         note: 16,
+//         appreciation: "Excellent travail, très impliquée et autonome.",
+//       };
+
+//       setStages([...realStages, fakeStage]);
+//       setCampagnes(campagnesRes.data.data ?? []);
+//     } catch (err) {
+//       console.error("Erreur chargement données:", err);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const getCampagneInfo = (campagneId) => {
+//     return campagnes.find((c) => c.id === campagneId);
+//   };
+
+//   // 🔍 Filtrage avancé (campagne + métier)
+//   const filteredStages = stages.filter((stage) => {
+//     const matchSearch =
+//       stage.titre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//       stage.etudiant?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//       stage.etudiant?.prenom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//       stage.etudiant?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//       stage.entreprise?.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//       stage.campagne?.titre?.toLowerCase().includes(searchTerm.toLowerCase());
+
+//     const matchCampagne =
+//       campagneFilter === "all" ||
+//       stage.campagne_id === parseInt(campagneFilter);
+
+//     const matchMetier =
+//       metierFilter === "all" ||
+//       stage.etudiant?.metier === metierFilter;
+
+//     return matchSearch && matchCampagne && matchMetier;
+//   });
+
+//   const getStageStatus = (dateDebut, dateFin) => {
+//     const today = new Date();
+//     const debut = new Date(dateDebut);
+//     const fin = new Date(dateFin);
+//     if (today < debut)
+//       return { label: "À venir", color: "bg-yellow-100 text-yellow-800" };
+//     if (today > fin)
+//       return { label: "Terminé", color: "bg-gray-100 text-gray-800" };
+//     return { label: "En cours", color: "bg-green-100 text-green-800" };
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="flex items-center justify-center min-h-screen bg-gray-50">
+//         <div className="text-center">
+//           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
+//           <p className="mt-6 text-xl text-gray-600 font-medium">
+//             Chargement des stages...
+//           </p>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-gray-50 p-6">
+//       {/* En-tête */}
+//       <div className="mb-6">
+//         <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+//           <FiBriefcase className="text-blue-600" size={32} />
+//           Gestion des Stages
+//         </h1>
+//         <p className="text-gray-600 mt-1">
+//           Consultez les stages, la progression et les évaluations des
+//           apprenants.
+//         </p>
+//       </div>
+
+//       {/* Barre de recherche et filtres */}
+//       <div className="bg-white rounded-lg shadow p-4 mb-6">
+//         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+//           {/* Recherche */}
+//           <div className="relative">
+//             <FiFileText className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+//             <input
+//               type="text"
+//               placeholder="Rechercher par titre, étudiant ou entreprise..."
+//               value={searchTerm}
+//               onChange={(e) => setSearchTerm(e.target.value)}
+//               className="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+//             />
+//           </div>
+
+//           {/* Filtre campagne */}
+//           <div className="relative">
+//             <FiTarget className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+//             <select
+//               value={campagneFilter}
+//               onChange={(e) => setCampagneFilter(e.target.value)}
+//               className="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+//             >
+//               <option value="all">Toutes les campagnes</option>
+//               {campagnes.map((c) => (
+//                 <option key={c.id} value={c.id}>
+//                   {c.titre}
+//                 </option>
+//               ))}
+//             </select>
+//           </div>
+
+//           {/* Filtre métier */}
+//           <div className="relative">
+//             <FiBookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+//             <select
+//               value={metierFilter}
+//               onChange={(e) => setMetierFilter(e.target.value)}
+//               className="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+//             >
+//               <option value="all">Tous les métiers</option>
+//               <option value="DWM">DWM - Développement Web & Mobile</option>
+//               <option value="ASRI">ASRI - Administration Systèmes et Réseaux</option>
+//               <option value="RT">RT - Réseaux & Télécoms</option>
+//             </select>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Liste des stages */}
+//       <div className="bg-white rounded-xl shadow-md overflow-hidden">
+//         <div className="p-6 border-b border-gray-200">
+//           <h2 className="text-2xl font-bold text-gray-800">
+//             Liste des stages ({filteredStages.length})
+//           </h2>
+//         </div>
+
+//         <div className="overflow-x-auto">
+//           <table className="min-w-full divide-y divide-gray-200">
+//             <thead className="bg-gray-50">
+//               <tr>
+//                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                   Étudiant
+//                 </th>
+//                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                   Métier
+//                 </th>
+//                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                   Entreprise
+//                 </th>
+//                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                   Progression
+//                 </th>
+//                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                   Note
+//                 </th>
+//                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                   Appréciation
+//                 </th>
+//               </tr>
+//             </thead>
+//             <tbody className="bg-white divide-y divide-gray-200">
+//               {filteredStages.map((stage) => (
+//                 <tr key={stage.id}>
+//                   <td className="px-6 py-4">
+//                     <div className="font-medium text-gray-900">
+//                       {stage.etudiant?.prenom || ""} {stage.etudiant?.name}
+//                     </div>
+//                     <div className="text-sm text-gray-500">
+//                       {stage.etudiant?.email || "—"}
+//                     </div>
+//                   </td>
+//                   <td className="px-6 py-4 text-sm text-gray-700">
+//                     {stage.etudiant?.metier || "N/A"}
+//                   </td>
+//                   <td className="px-6 py-4 text-sm text-gray-700">
+//                     {stage.entreprise?.nom || "—"}
+//                   </td>
+//                   <td className="px-6 py-4">
+//                     <div className="w-full bg-gray-200 rounded-full h-2.5">
+//                       <div
+//                         className="bg-blue-600 h-2.5 rounded-full"
+//                         style={{ width: `${stage.progression || 0}%` }}
+//                       ></div>
+//                     </div>
+//                     <p className="text-xs text-gray-600 mt-1">
+//                       {stage.progression || 0}% complété
+//                     </p>
+//                   </td>
+//                   <td className="px-6 py-4 text-center">
+//                     {stage.note ? (
+//                       <span className="text-lg font-semibold text-green-600 flex items-center justify-center gap-1">
+//                         <FiStar className="text-yellow-400" /> {stage.note}/20
+//                       </span>
+//                     ) : (
+//                       <span className="text-gray-400">—</span>
+//                     )}
+//                   </td>
+//                   <td className="px-6 py-4 text-sm text-gray-700 italic">
+//                     {stage.appreciation || "Aucune appréciation"}
+//                   </td>
+//                 </tr>
+//               ))}
+//             </tbody>
+//           </table>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default StageListChefDepartement;

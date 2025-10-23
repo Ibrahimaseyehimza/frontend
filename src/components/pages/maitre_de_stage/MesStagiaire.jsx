@@ -202,7 +202,7 @@ const MesStagiaires = () => {
                         
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-dégradé rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                            <div className="w-11 h-10 bg-dégradé rounded-full flex items-center justify-center text-white font-bold shadow-md">
                               {etudiant.prenom?.charAt(0)}
                               {etudiant.nom?.charAt(0)}
                             </div>

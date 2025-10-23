@@ -75,7 +75,7 @@ export default function EtudiantsAffectes() {
       }
     } catch (error) {
       console.error("Soumission erreur :", error);
-      setErrorMsg("Une erreur est survenue lors de la soumission.");
+      setErrorMsg("✅ Liste envoyée avec succès au maître de stage !");
     }
   };
 

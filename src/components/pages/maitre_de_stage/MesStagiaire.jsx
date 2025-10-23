@@ -74,7 +74,7 @@ const MesStagiaires = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* En-tête */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-8 text-white shadow-2xl mb-8">
+        <div className="bg-dégradé rounded-3xl p-8 text-white shadow-2xl mb-8">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-4xl font-bold mb-2">👥 Mes Stagiaires</h1>
@@ -181,7 +181,7 @@ const MesStagiaires = () => {
               {/* Vue en tableau pour desktop */}
               <div className="hidden lg:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-blue-600 to-blue-700">
+                  <thead className="bg-dégradé">
                     <tr>
                       <th className="text-left py-4 px-6 font-semibold text-white">#</th>
                       <th className="text-left py-4 px-6 font-semibold text-white">Stagiaire</th>
@@ -202,7 +202,7 @@ const MesStagiaires = () => {
                         
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                            <div className="w-10 h-10 bg-dégradé rounded-full flex items-center justify-center text-white font-bold shadow-md">
                               {etudiant.prenom?.charAt(0)}
                               {etudiant.nom?.charAt(0)}
                             </div>

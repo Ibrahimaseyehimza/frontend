@@ -429,7 +429,8 @@ const Register = () => {
                     className="flex-1 outline-none bg-gray-400 bg-opacity-50 text-white placeholder-gray-300 text-sm sm:text-base"
                     name="departement_id"
                     type="number"
-                    placeholder="ID Département"
+                    // placeholder="ID Département"
+                    placeholder="Role Chef De Département"
                     value={form.departement_id}
                     onChange={handleChange}
                     required

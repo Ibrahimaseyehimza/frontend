@@ -1006,7 +1006,7 @@ function App() {
             <Route path="utilisateurs" element={<ChefMetierList />} />
             <Route path="entreprises" element={<EntrepriseList />} />
             <Route path="rh" element={<RhList />} />
-            <Route path="campagnes" element={<CampagneList />} />
+            <Route path="campagnes-chefDepartement" element={<CampagneList />} />
             <Route path="stages" element={<StageList />} />
           </Route>
 

@@ -44,8 +44,10 @@ const MetierCard = ({ metier }) => {
     "Systèmes & Réseaux Informatiques": "/ASRI BLEU.png",
     "Systèmes et Réseaux Informatiques": "/ASRI BLEU.png",
     "DWM": "/DWM BLEU.png",
+    "dwm": "/DWM BLEU.png",
     "Développement Web et Mobile": "/DWM BLEU.png",
     "Developpement Web & Mobile": "/DWM BLEU.png",
+    "Développement web et mobile": "/dwm BLEU.png",
     "RT": "/RT BLEU.png",
     "Réseau & Télécom": "/RT BLEU.png",
     "Réseau et Télécom": "/RT BLEU.png",
@@ -604,7 +606,7 @@ const ChefDepartementDashboard = () => {
             </div>
           </NavLink>
 
-          <NavLink to="campagnes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100  text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
+          <NavLink to="campagnes-chefDepartement" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100  text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
             <div className="flex items-center">
               <TbBrandCampaignmonitor className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Campagnes</span>

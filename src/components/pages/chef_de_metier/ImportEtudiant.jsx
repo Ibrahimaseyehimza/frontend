@@ -156,7 +156,7 @@ const ImportEtudiant = () => {
         });
       } catch (err) {
         // Fallback si le endpoint chef-metier n'existe pas
-        response = await api.post("/apprenants/chef-metier/import", formData, {
+        response = await api.post("/chef-metier/apprenants/import", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       }

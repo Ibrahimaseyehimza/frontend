@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../../../api/axios";
-import { useAuth } from "../../../AuthContext"; // Import du contexte d'authentification
+import { useAuth } from "../../../context/AuthContext"; // Import du contexte d'authentification
 import { FiMail, FiPhone, FiMapPin, FiEdit2, FiTrash2, FiSearch } from "react-icons/fi";
 import { RiBuilding4Line } from "react-icons/ri";
 

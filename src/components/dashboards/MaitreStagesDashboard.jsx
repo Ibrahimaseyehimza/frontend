@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
 import { IoHomeOutline, IoClose } from "react-icons/io5";
 import { FaRegUser, FaDownload } from "react-icons/fa6";
@@ -10,6 +10,7 @@ import { FiLogOut, FiSearch, FiSettings, FiUser } from "react-icons/fi";
 import { HiMenuAlt3 } from "react-icons/hi";
 import { GiVendingMachine } from "react-icons/gi";
 import NotificationBell from "../pages/NotificationBell";
+import { IoDocumentAttachOutline } from "react-icons/io5";
 
 // Composant pour afficher les statistiques
 const StatCard = ({ title, value, subtitle, icon: Icon, iconBg }) => (
@@ -638,6 +639,14 @@ const MaitreStagesDashboard = () => {
             <div className="flex items-center">
               <GiVendingMachine className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Livrables</span>
+            </div>
+          </NavLink>
+
+          <NavLink to="taches_maitre" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-blue-700"}`}>
+            <div className="flex items-center">
+              <IoDocumentAttachOutline className="text-lg sm:text-xl flex-shrink-0" />
+              <span className="ml-2">Taches Assignés</span>
+              
             </div>
           </NavLink>
         </nav>

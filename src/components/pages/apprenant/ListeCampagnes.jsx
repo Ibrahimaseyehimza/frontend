@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../../../api/axios";
-import { useAuth } from "../../../AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 import { TbBrandCampaignmonitor } from "react-icons/tb";
 import { BsBuilding, BsCalendar3 } from "react-icons/bs";
 import { FiAlertCircle } from "react-icons/fi";
@@ -29,8 +29,12 @@ const ListeCampagne = () => {
         console.log("🔍 Token:", token ? "Présent" : "Absent");
         
         // ✅ CORRECTION : Pas de /v1 car déjà dans baseURL
+<<<<<<< HEAD
         const response = await api.get("/route_campagne_apprenant", {
         // const response = await api.get("/campagnes/apprenant", {
+=======
+        const response = await api.get("/apprenant/campagnes", {
+>>>>>>> fc66ec1f0660aab9f3b95d72e88a3ac02408d6a0
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',

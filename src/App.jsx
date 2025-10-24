@@ -907,6 +907,9 @@ import MaitreStageMesStagiaire from "./components/pages/maitre_de_stage/MesStagi
 import MaitreStageLivablesList from "./components/pages/maitre_de_stage/LivrablesList";
 import MaitreStageRapportsList from "./components/pages/maitre_de_stage/RapportsList";
 import MaitreStageTachesMaitre from "./components/pages/maitre_de_stage/TachesMaitre";
+import MesLivrables from "./components/pages/apprenant/MesLivrables";
+import MesLivrablesApprenant from "./components/pages/apprenant/MesLivrablesApprenant";
+import LivrablesMaitre from "./components/pages/apprenant/LivrablesMaitre";
 
 
 // ===========================
@@ -989,6 +992,8 @@ function App() {
             <Route path="campagnes" element={<ListeCampagne />} />
             <Route path="mes-demandes" element={<MesDemandes />} />
             <Route path="mon-stage" element={<MonStage />} />
+            {/* <Route path="mes-livrables" element={<MesLivrables />} /> */}
+            <Route path="mes-livrables" element={<MesLivrablesApprenant />} />
           </Route>
 
           {/* ===========================
@@ -1043,7 +1048,8 @@ function App() {
            >
             <Route path="evaluations" element={<MaitreStageEvaluationsList />} />
             <Route path="mes_stagiaires" element={<MaitreStageMesStagiaire />} />
-            <Route path="livrables" element={<MaitreStageLivablesList />} />
+            {/* <Route path="livrables" element={<MaitreStageLivablesList />} /> */}
+            <Route path="livrables" element={<LivrablesMaitre />} />
             <Route path="rapports" element={<MaitreStageRapportsList />} />
             {/* <Route path="notifications" element={<MaitreNotifications />} /> */}
             <Route path="etudiants_affectes" element={<EtudiantsAfectesAuStage />} />

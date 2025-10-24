@@ -741,6 +741,12 @@ const ApprenantDashboard = () => {
               <span className="ml-2">Mon stage</span>
             </div>
           </NavLink>
+          <NavLink to="mes-livrables" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+            <div className="flex items-center">
+              <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
+              <span className="ml-2">Mes Livrables</span>
+            </div>
+          </NavLink>
 
           <NavLink to="rapport" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">

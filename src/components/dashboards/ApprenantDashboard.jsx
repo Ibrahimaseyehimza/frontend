@@ -755,12 +755,12 @@ const ApprenantDashboard = () => {
             </div>
           </NavLink>
 
-          <NavLink to="notes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          {/* <NavLink to="notes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <MdNoteAlt className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Notes</span>
             </div>
-          </NavLink>
+          </NavLink> */}
         </nav>
       </aside>
 

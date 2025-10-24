@@ -1,4 +1,4 @@
-// components/dashboards/ApprenantDashboard.jsx - VERSION COMPLÈTE CORRIGÉE
+// components/dashboards/ApprenantDashboard.jsx - VERSION CORRIGÉE
 import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -8,26 +8,9 @@ import { FaRegUser } from "react-icons/fa6";
 import { TbBrandCampaignmonitor } from "react-icons/tb";
 import { MdAssignmentTurnedIn, MdNoteAlt } from "react-icons/md";
 import { BsFileEarmarkText, BsCheckCircle, BsBuilding } from "react-icons/bs";
-import { FiLogOut, FiSearch, FiSettings, FiUser } from "react-icons/fi";
+import { FiLogOut, FiSearch, FiSettings, FiUser, FiMail } from "react-icons/fi";
 import { HiMenuAlt3 } from "react-icons/hi";
 import NotificationBell from '../pages/NotificationBell';
-
-
-// Composant pour afficher les statistiques
-const StatCard = ({ title, value, subtitle, icon: Icon, iconBg }) => (
-  <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-    <div className="flex items-start justify-between">
-      <div className="flex-1">
-        <p className="text-xs text-gray-500 font-medium mb-1">{title}</p>
-        <h3 className="text-3xl font-bold text-gray-900 mb-1">{value}</h3>
-        <p className="text-xs text-gray-400">{subtitle}</p>
-      </div>
-      <div className={`${iconBg} w-14 h-14 rounded-xl flex items-center justify-center shadow-md`}>
-        <Icon className="text-white" size={24} />
-      </div>
-    </div>
-  </div>
-);
 
 // Composant tableau de bord principal
 const TableauDeBordHome = () => {
@@ -64,36 +47,80 @@ const TableauDeBordHome = () => {
         api.get("/apprenant/taches"),
         api.get("/apprenant/livrables"),
         api.get("/apprenant/candidatures"),
-        api.get("/campagnes/apprenant"), // Pour campagnes disponibles
+        api.get("/campagnes/apprenant"),
       ]);
       
-      // Extraction du stage en cours
-      const stageData = responses[0].status === 'fulfilled' 
-        ? responses[0].value?.data?.data 
+      // ✅ CORRECTION : Extraction sécurisée du stage
+      const stageResponse = responses[0];
+      const stageData = stageResponse.status === 'fulfilled' 
+        ? (stageResponse.value?.data?.data || stageResponse.value?.data || null)
         : null;
       
-      // Extraction des tâches
-      const tachesData = responses[1].status === 'fulfilled'
-        ? (responses[1].value?.data?.data || responses[1].value?.data || [])
-        : [];
+      // ✅ CORRECTION : Extraction sécurisée des tâches avec vérification de type
+      const tachesResponse = responses[1];
+      let tachesData = [];
+      if (tachesResponse.status === 'fulfilled') {
+        const rawData = tachesResponse.value?.data;
+        console.log('🔍 Type de rawData:', typeof rawData, 'Est array?', Array.isArray(rawData));
+        console.log('📦 Contenu rawData:', rawData);
+        
+        if (Array.isArray(rawData)) {
+          tachesData = rawData;
+        } else if (rawData && Array.isArray(rawData.data)) {
+          tachesData = rawData.data;
+        } else if (rawData && typeof rawData === 'object') {
+          console.warn('⚠️ Format inattendu pour les tâches:', rawData);
+          tachesData = [];
+        }
+      }
       
-      // Extraction des livrables
-      const livrablesData = responses[2].status === 'fulfilled'
-        ? (responses[2].value?.data?.data || responses[2].value?.data || [])
-        : [];
+      // ✅ CORRECTION : Extraction sécurisée des livrables
+      const livrablesResponse = responses[2];
+      let livrablesData = [];
+      if (livrablesResponse.status === 'fulfilled') {
+        const rawData = livrablesResponse.value?.data;
+        if (Array.isArray(rawData)) {
+          livrablesData = rawData;
+        } else if (rawData && Array.isArray(rawData.data)) {
+          livrablesData = rawData.data;
+        }
+      }
       
-      // Extraction des candidatures
-      const candidaturesData = responses[3].status === 'fulfilled'
-        ? (responses[3].value?.data?.data || responses[3].value?.data || [])
-        : [];
+      // ✅ CORRECTION : Extraction sécurisée des candidatures
+      const candidaturesResponse = responses[3];
+      let candidaturesData = [];
+      if (candidaturesResponse.status === 'fulfilled') {
+        const rawData = candidaturesResponse.value?.data;
+        if (Array.isArray(rawData)) {
+          candidaturesData = rawData;
+        } else if (rawData && Array.isArray(rawData.data)) {
+          candidaturesData = rawData.data;
+        }
+      }
       
+      console.log('✅ Données extraites:', {
+        stage: stageData,
+        taches: tachesData.length,
+        livrables: livrablesData.length,
+        candidatures: candidaturesData.length
+      });
+      
+      // ✅ S'assurer que ce sont des tableaux
       setTaches(Array.isArray(tachesData) ? tachesData : []);
       setLivrables(Array.isArray(livrablesData) ? livrablesData : []);
       
       // Calculer les statistiques
-      const tachesTerminees = tachesData.filter(t => t.statut === 'termine' || t.status === 'completed').length;
-      const tachesEnCours = tachesData.filter(t => t.statut === 'en_cours' || t.status === 'in_progress').length;
-      const performance = tachesData.length > 0 ? ((tachesTerminees / tachesData.length) * 5).toFixed(1) : 0;
+      const tachesTerminees = tachesData.filter(t => 
+        t.statut === 'termine' || t.statut === 'terminee' || t.status === 'completed'
+      ).length;
+      
+      const tachesEnCours = tachesData.filter(t => 
+        t.statut === 'en_cours' || t.status === 'in_progress'
+      ).length;
+      
+      const performance = tachesData.length > 0 
+        ? ((tachesTerminees / tachesData.length) * 5).toFixed(1) 
+        : 0;
       
       // Calculer la progression du stage
       let progressionStage = 0;
@@ -108,7 +135,7 @@ const TableauDeBordHome = () => {
       
       setStats({
         campagnesDisponibles: 0,
-        candidaturesEnvoyees: Array.isArray(candidaturesData) ? candidaturesData.length : 0,
+        candidaturesEnvoyees: candidaturesData.length,
         stageEnCours: stageData,
         documentsDeposes: livrablesData.length,
         tachesTotales: tachesData.length,
@@ -116,13 +143,6 @@ const TableauDeBordHome = () => {
         tachesEnCours: tachesEnCours,
         performance: performance,
         progressionStage: progressionStage.toFixed(0),
-      });
-      
-      console.log("📊 Statistiques apprenant:", {
-        stage: stageData,
-        taches: tachesData.length,
-        livrables: livrablesData.length,
-        performance: performance,
       });
       
     } catch (err) {
@@ -164,7 +184,7 @@ const TableauDeBordHome = () => {
     <div className="space-y-6">
       {/* Carte principale avec informations du stage */}
       {stats.stageEnCours ? (
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="bg-dégradé rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
           
@@ -232,26 +252,23 @@ const TableauDeBordHome = () => {
         </div>
       ) : (
         <div className="bg-dégradé rounded-2xl p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between">
-  {/* Partie gauche : texte et bouton */}
-  <div>
-    <h1 className="text-3xl font-bold mb-2">
-      Bonjour, {user?.prenom || user?.name}
-    </h1>
-    <p className="text-gray-300 mb-4">Aucun stage en cours actuellement</p>
-    <NavLink 
-      to="campagnes"
-      className="inline-block bg-white text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-    >
-      Voir les campagnes disponibles →
-    </NavLink>
-  </div>
+          <div>
+            <h1 className="text-3xl font-bold mb-2">
+              Bonjour, {user?.prenom || user?.name}
+            </h1>
+            <p className="text-gray-300 mb-4">Aucun stage en cours actuellement</p>
+            <NavLink 
+              to="campagnes"
+              className="inline-block bg-white text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+            >
+              Voir les campagnes disponibles →
+            </NavLink>
+          </div>
 
-  {/* Partie droite : image */}
-  <div className="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-    <img src="/LOGO EIT.png" alt="Logo ISEP" className="h-24 w-auto object-contain" />
-  </div>
-</div>
-
+          <div className="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
+            <img src="/LOGO EIT.png" alt="Logo ISEP" className="h-24 w-auto object-contain" />
+          </div>
+        </div>
       )}
 
       {/* Statistiques en cartes */}
@@ -347,13 +364,13 @@ const TableauDeBordHome = () => {
                       </p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ml-3 whitespace-nowrap ${
-                      tache.statut === 'termine' || tache.status === 'completed'
+                      tache.statut === 'termine' || tache.statut === 'terminee' || tache.status === 'completed'
                         ? 'bg-green-100 text-green-700'
                         : tache.statut === 'en_cours' || tache.status === 'in_progress'
                         ? 'bg-yellow-100 text-yellow-700'
                         : 'bg-gray-100 text-gray-700'
                     }`}>
-                      {tache.statut === 'termine' || tache.status === 'completed' ? 'Terminée' : 
+                      {tache.statut === 'termine' || tache.statut === 'terminee' || tache.status === 'completed' ? 'Terminée' : 
                        tache.statut === 'en_cours' || tache.status === 'in_progress' ? 'En cours' : 'À faire'}
                     </span>
                   </div>
@@ -383,7 +400,7 @@ const TableauDeBordHome = () => {
             <h3 className="text-xl font-bold text-gray-900">Mes Livrables</h3>
             <NavLink
               to="rapport"
-              className="flex items-center gap-2 bg-dégradé text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-blue-900 transition-colors text-sm font-medium"
             >
               <span className="text-lg leading-none">↑</span>
               Nouveau
@@ -479,10 +496,9 @@ const TableauDeBordHome = () => {
         </div>
       </div>
 
-      {/* Section infos du stage et actions rapides */}
+      {/* Section contact superviseur (si stage en cours) */}
       {stats.stageEnCours && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Contact Superviseur */}
           <div className="bg-white rounded-2xl shadow-md p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-6">Contact Superviseur</h3>
             
@@ -513,7 +529,7 @@ const TableauDeBordHome = () => {
 
               <button
                 onClick={() => window.location.href = `mailto:${stats.stageEnCours.maitre_stage?.email || 'marie.faye@orange.sn'}`}
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 mt-4"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -698,42 +714,42 @@ const ApprenantDashboard = () => {
         </div>
 
         <nav className="flex-1 p-3 sm:p-4 space-y-1 sm:space-y-2 overflow-y-auto">
-          <NavLink to="." end className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="." end className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <IoHomeOutline className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Tableau de bord</span>
             </div>
           </NavLink>
 
-          <NavLink to="campagnes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="campagnes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <TbBrandCampaignmonitor className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Campagnes</span>
             </div>
           </NavLink>
 
-          <NavLink to="mes-demandes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="mes-demandes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <MdAssignmentTurnedIn className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Mes demandes</span>
             </div>
           </NavLink>
 
-          <NavLink to="mon-stage" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="mon-stage" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Mon stage</span>
             </div>
           </NavLink>
 
-          <NavLink to="rapport" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="rapport" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <BsFileEarmarkText className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Rapport</span>
             </div>
           </NavLink>
 
-          <NavLink to="notes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
+          <NavLink to="notes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
               <MdNoteAlt className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Notes</span>
@@ -766,9 +782,9 @@ const ApprenantDashboard = () => {
               />
             </div>
             {/* 🔔 Notifications */}
-                  <div className="flex-shrink-0 h-10 ml-4">
-                        <NotificationBell />
-                        </div>
+            <div className="flex-shrink-0 h-10 ml-4">
+              <NotificationBell />
+            </div>
           </div>
 
           {/* Menu profil */}

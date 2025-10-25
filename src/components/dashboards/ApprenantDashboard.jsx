@@ -1,4 +1,4 @@
-// components/dashboards/ApprenantDashboard.jsx - VERSION CORRIGÉE
+// components/dashboards/ApprenantDashboard.jsx - VERSION MISE À JOUR
 import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -14,7 +14,7 @@ import NotificationBell from '../pages/NotificationBell';
 
 // Composant tableau de bord principal
 const TableauDeBordHome = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   
   const [stats, setStats] = useState({
     campagnesDisponibles: 0,
@@ -26,10 +26,14 @@ const TableauDeBordHome = () => {
     tachesEnCours: 0,
     performance: 0,
     progressionStage: 0,
+    livrablesApprouves: 0,
+    livrablesEnAttente: 0,
+    livrablesRejetes: 0,
   });
   
   const [taches, setTaches] = useState([]);
   const [livrables, setLivrables] = useState([]);
+  const [campagnes, setCampagnes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -43,50 +47,61 @@ const TableauDeBordHome = () => {
       setError(null);
       
       const responses = await Promise.allSettled([
-        api.get("/apprenant/mon-stage"),
-        api.get("/apprenant/taches"),
-        api.get("/apprenant/livrables"),
-        api.get("/apprenant/candidatures"),
-        api.get("/campagnes/apprenant"),
+        api.get("/apprenant/mon-stage", {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        api.get("/apprenant/taches", {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        // ✅ Récupération des livrables
+        api.get("/mes_livrables", {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        api.get("/apprenant/candidatures", {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        // ✅ Récupération des campagnes disponibles
+        api.get("/route_campagne_apprenant", {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
       ]);
       
-      // ✅ CORRECTION : Extraction sécurisée du stage
+      // Extraction du stage
       const stageResponse = responses[0];
       const stageData = stageResponse.status === 'fulfilled' 
         ? (stageResponse.value?.data?.data || stageResponse.value?.data || null)
         : null;
       
-      // ✅ CORRECTION : Extraction sécurisée des tâches avec vérification de type
+      // Extraction des tâches
       const tachesResponse = responses[1];
       let tachesData = [];
       if (tachesResponse.status === 'fulfilled') {
         const rawData = tachesResponse.value?.data;
-        console.log('🔍 Type de rawData:', typeof rawData, 'Est array?', Array.isArray(rawData));
-        console.log('📦 Contenu rawData:', rawData);
-        
         if (Array.isArray(rawData)) {
           tachesData = rawData;
+        } else if (rawData && Array.isArray(rawData.taches)) {
+          tachesData = rawData.taches;
         } else if (rawData && Array.isArray(rawData.data)) {
           tachesData = rawData.data;
-        } else if (rawData && typeof rawData === 'object') {
-          console.warn('⚠️ Format inattendu pour les tâches:', rawData);
-          tachesData = [];
         }
       }
       
-      // ✅ CORRECTION : Extraction sécurisée des livrables
+      // ✅ Extraction des livrables
       const livrablesResponse = responses[2];
       let livrablesData = [];
       if (livrablesResponse.status === 'fulfilled') {
         const rawData = livrablesResponse.value?.data;
+        console.log('📦 Données livrables reçues:', rawData);
         if (Array.isArray(rawData)) {
           livrablesData = rawData;
+        } else if (rawData && Array.isArray(rawData.livrables)) {
+          livrablesData = rawData.livrables;
         } else if (rawData && Array.isArray(rawData.data)) {
           livrablesData = rawData.data;
         }
       }
       
-      // ✅ CORRECTION : Extraction sécurisée des candidatures
+      // Extraction des candidatures
       const candidaturesResponse = responses[3];
       let candidaturesData = [];
       if (candidaturesResponse.status === 'fulfilled') {
@@ -98,24 +113,54 @@ const TableauDeBordHome = () => {
         }
       }
       
+      // ✅ Extraction des campagnes
+      const campagnesResponse = responses[4];
+      let campagnesData = [];
+      if (campagnesResponse.status === 'fulfilled') {
+        const rawData = campagnesResponse.value?.data;
+        console.log('🎯 Données campagnes reçues:', rawData);
+        if (Array.isArray(rawData)) {
+          campagnesData = rawData;
+        } else if (rawData && Array.isArray(rawData.data)) {
+          campagnesData = rawData.data;
+        } else if (rawData && Array.isArray(rawData.campagnes)) {
+          campagnesData = rawData.campagnes;
+        }
+      }
+      
       console.log('✅ Données extraites:', {
         stage: stageData,
         taches: tachesData.length,
         livrables: livrablesData.length,
-        candidatures: candidaturesData.length
+        candidatures: candidaturesData.length,
+        campagnes: campagnesData.length
       });
       
-      // ✅ S'assurer que ce sont des tableaux
+      // S'assurer que ce sont des tableaux
       setTaches(Array.isArray(tachesData) ? tachesData : []);
       setLivrables(Array.isArray(livrablesData) ? livrablesData : []);
+      setCampagnes(Array.isArray(campagnesData) ? campagnesData : []);
       
-      // Calculer les statistiques
+      // Calculer les statistiques des tâches
       const tachesTerminees = tachesData.filter(t => 
         t.statut === 'termine' || t.statut === 'terminee' || t.status === 'completed'
       ).length;
       
       const tachesEnCours = tachesData.filter(t => 
         t.statut === 'en_cours' || t.status === 'in_progress'
+      ).length;
+      
+      // ✅ Calculer les statistiques des livrables
+      const livrablesApprouves = livrablesData.filter(l => 
+        l.statut === 'approuve' || l.status === 'approved'
+      ).length;
+      
+      const livrablesEnAttente = livrablesData.filter(l => 
+        l.statut === 'en_attente' || l.status === 'pending'
+      ).length;
+      
+      const livrablesRejetes = livrablesData.filter(l => 
+        l.statut === 'rejete' || l.status === 'rejected'
       ).length;
       
       const performance = tachesData.length > 0 
@@ -134,7 +179,7 @@ const TableauDeBordHome = () => {
       }
       
       setStats({
-        campagnesDisponibles: 0,
+        campagnesDisponibles: campagnesData.length,
         candidaturesEnvoyees: candidaturesData.length,
         stageEnCours: stageData,
         documentsDeposes: livrablesData.length,
@@ -143,6 +188,9 @@ const TableauDeBordHome = () => {
         tachesEnCours: tachesEnCours,
         performance: performance,
         progressionStage: progressionStage.toFixed(0),
+        livrablesApprouves: livrablesApprouves,
+        livrablesEnAttente: livrablesEnAttente,
+        livrablesRejetes: livrablesRejetes,
       });
       
     } catch (err) {
@@ -256,10 +304,15 @@ const TableauDeBordHome = () => {
             <h1 className="text-3xl font-bold mb-2">
               Bonjour, {user?.prenom || user?.name}
             </h1>
-            <p className="text-gray-300 mb-4">Aucun stage en cours actuellement</p>
+            <p className="text-blue-100 mb-2">Aucun stage en cours actuellement</p>
+            {stats.campagnesDisponibles > 0 && (
+              <p className="text-blue-200 text-sm mb-4">
+                🎯 {stats.campagnesDisponibles} campagne{stats.campagnesDisponibles > 1 ? 's' : ''} disponible{stats.campagnesDisponibles > 1 ? 's' : ''}
+              </p>
+            )}
             <NavLink 
               to="campagnes"
-              className="inline-block bg-white text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+              className="inline-block bg-white text-blue-800 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
             >
               Voir les campagnes disponibles →
             </NavLink>
@@ -271,70 +324,85 @@ const TableauDeBordHome = () => {
         </div>
       )}
 
-      {/* Statistiques en cartes */}
+      {/* Statistiques en cartes - VERSION ÉTENDUE */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <circle cx="10" cy="10" r="8" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Tâches Totales</p>
-            <p className="text-4xl font-bold text-gray-900">{stats.tachesTotales}</p>
-          </div>
-        </div>
+        <StatCard
+          title="Campagnes"
+          value={stats.campagnesDisponibles}
+          icon={<TbBrandCampaignmonitor size={24} />}
+          color="purple"
+          subtitle="Disponibles"
+        />
 
-        <div className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center">
-              <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+        <StatCard
+          title="Tâches"
+          value={stats.tachesTotales}
+          icon={<svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" /></svg>}
+          color="blue"
+          subtitle={`${stats.tachesTerminees} terminées`}
+        />
+
+        <StatCard
+          title="Livrables"
+          value={stats.documentsDeposes}
+          icon={<BsFileEarmarkText size={24} />}
+          color="green"
+          subtitle={`${stats.livrablesApprouves} approuvés`}
+        />
+
+        <StatCard
+          title="Performance"
+          value={`${stats.performance} ★`}
+          icon={<svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>}
+          color="yellow"
+          subtitle="Note globale"
+        />
+      </div>
+
+      {/* Détails Livrables - NOUVEAU */}
+      {stats.documentsDeposes > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-600 text-sm font-medium">Approuvés</p>
+                <p className="text-2xl font-bold text-green-900">{stats.livrablesApprouves}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
                 <BsCheckCircle className="text-white" size={24} />
               </div>
             </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Terminées</p>
-            <p className="text-4xl font-bold text-gray-900">{stats.tachesTerminees}</p>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-14 h-14 bg-yellow-100 rounded-xl flex items-center justify-center">
-              <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 border border-yellow-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-yellow-600 text-sm font-medium">En attente</p>
+                <p className="text-2xl font-bold text-yellow-900">{stats.livrablesEnAttente}</p>
+              </div>
+              <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <circle cx="10" cy="10" r="3" />
                 </svg>
               </div>
             </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500 mb-1">En Cours</p>
-            <p className="text-4xl font-bold text-gray-900">{stats.tachesEnCours}</p>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center">
-              <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+          <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border border-red-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-red-600 text-sm font-medium">Rejetés</p>
+                <p className="text-2xl font-bold text-red-900">{stats.livrablesRejetes}</p>
+              </div>
+              <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               </div>
             </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Performance</p>
-            <p className="text-4xl font-bold text-gray-900">{stats.performance} ★</p>
-          </div>
         </div>
-      </div>
+      )}
 
       {/* Mes Tâches et Mes Livrables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -399,8 +467,8 @@ const TableauDeBordHome = () => {
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-gray-900">Mes Livrables</h3>
             <NavLink
-              to="rapport"
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-blue-900 transition-colors text-sm font-medium"
+              to="mes-livrables"
+              className="flex items-center gap-2 bg-dégradé text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-blue-900 transition-colors text-sm font-medium"
             >
               <span className="text-lg leading-none">↑</span>
               Nouveau
@@ -428,13 +496,13 @@ const TableauDeBordHome = () => {
                       </div>
                     </div>
                     <span className={`px-2.5 py-1 rounded-full text-xs font-bold ml-2 ${
-                      livrable.statut === 'valide' || livrable.status === 'approved'
+                      livrable.statut === 'approuve' || livrable.status === 'approved'
                         ? 'bg-green-100 text-green-700'
                         : livrable.statut === 'en_attente' || livrable.status === 'pending'
                         ? 'bg-yellow-100 text-yellow-700'
                         : 'bg-red-100 text-red-700'
                     }`}>
-                      {livrable.statut === 'valide' || livrable.status === 'approved' ? '✓' : 
+                      {livrable.statut === 'approuve' || livrable.status === 'approved' ? '✓' : 
                        livrable.statut === 'en_attente' || livrable.status === 'pending' ? '⏳' : '✗'}
                     </span>
                   </div>
@@ -451,6 +519,46 @@ const TableauDeBordHome = () => {
         </div>
       </div>
 
+      {/* Campagnes Disponibles - NOUVEAU */}
+      {campagnes.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-md p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <TbBrandCampaignmonitor className="text-blue-600" size={24} />
+              Campagnes Disponibles
+            </h3>
+            <NavLink 
+              to="campagnes"
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Voir toutes →
+            </NavLink>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {campagnes.slice(0, 3).map((campagne) => (
+              <div key={campagne.id} className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 hover:shadow-md transition-all">
+                <h4 className="font-bold text-gray-900 mb-2">{campagne.titre}</h4>
+                {campagne.description && (
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{campagne.description}</p>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs bg-purple-200 text-purple-800 px-2 py-1 rounded-full font-medium">
+                    {campagne.metier?.nom || 'Non spécifié'}
+                  </span>
+                  <NavLink 
+                    to="campagnes"
+                    className="text-xs text-purple-600 hover:text-purple-800 font-medium"
+                  >
+                    Postuler →
+                  </NavLink>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Actions rapides */}
       <div className="bg-white rounded-2xl shadow-md p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
@@ -460,11 +568,11 @@ const TableauDeBordHome = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <NavLink 
             to="campagnes"
-            className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-xl text-center transition-all hover:shadow-md"
+            className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl text-center transition-all hover:shadow-md"
           >
-            <TbBrandCampaignmonitor className="text-blue-600 mx-auto mb-3" size={32} />
+            <TbBrandCampaignmonitor className="text-purple-600 mx-auto mb-3" size={32} />
             <p className="font-semibold text-gray-900 text-sm">Campagnes</p>
-            <p className="text-xs text-gray-600 mt-1">Voir les offres</p>
+            <p className="text-xs text-gray-600 mt-1">{stats.campagnesDisponibles} disponibles</p>
           </NavLink>
           
           <NavLink 
@@ -473,25 +581,25 @@ const TableauDeBordHome = () => {
           >
             <MdAssignmentTurnedIn className="text-green-600 mx-auto mb-3" size={32} />
             <p className="font-semibold text-gray-900 text-sm">Mes Demandes</p>
-            <p className="text-xs text-gray-600 mt-1">Suivi candidatures</p>
+            <p className="text-xs text-gray-600 mt-1">{stats.candidaturesEnvoyees} envoyées</p>
+          </NavLink>
+          
+          <NavLink 
+            to="mes-livrables"
+            className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-xl text-center transition-all hover:shadow-md"
+          >
+            <BsFileEarmarkText className="text-blue-600 mx-auto mb-3" size={32} />
+            <p className="font-semibold text-gray-900 text-sm">Livrables</p>
+            <p className="text-xs text-gray-600 mt-1">{stats.documentsDeposes} déposés</p>
           </NavLink>
           
           <NavLink 
             to="mon-stage"
-            className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl text-center transition-all hover:shadow-md"
-          >
-            <FaRegUser className="text-purple-600 mx-auto mb-3" size={32} />
-            <p className="font-semibold text-gray-900 text-sm">Mon Stage</p>
-            <p className="text-xs text-gray-600 mt-1">Détails du stage</p>
-          </NavLink>
-          
-          <NavLink 
-            to="rapport"
             className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 rounded-xl text-center transition-all hover:shadow-md"
           >
-            <BsFileEarmarkText className="text-orange-600 mx-auto mb-3" size={32} />
-            <p className="font-semibold text-gray-900 text-sm">Rapport</p>
-            <p className="text-xs text-gray-600 mt-1">Déposer rapport</p>
+            <FaRegUser className="text-orange-600 mx-auto mb-3" size={32} />
+            <p className="font-semibold text-gray-900 text-sm">Mon Stage</p>
+            <p className="text-xs text-gray-600 mt-1">Détails</p>
           </NavLink>
         </div>
       </div>
@@ -592,7 +700,7 @@ const TableauDeBordHome = () => {
             
             <div className="space-y-3">
               <NavLink
-                to="rapport"
+                to="mes-livrables"
                 className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group"
               >
                 <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -638,7 +746,35 @@ const TableauDeBordHome = () => {
   );
 };
 
-// Composant principal du dashboard
+// Composant StatCard amélioré
+const StatCard = ({ title, value, icon, color, subtitle }) => {
+  const colors = {
+    blue: "from-blue-500 to-blue-600",
+    yellow: "from-yellow-500 to-yellow-600",
+    green: "from-green-500 to-green-600",
+    red: "from-red-500 to-red-600",
+    purple: "from-purple-500 to-purple-600",
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex-1">
+          <p className="text-gray-600 text-sm font-medium mb-1">{title}</p>
+          <p className="text-3xl font-bold text-gray-900">{value}</p>
+          {subtitle && (
+            <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+          )}
+        </div>
+        <div className={`p-3 rounded-lg bg-gradient-to-br ${colors[color]} text-white flex-shrink-0`}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Composant principal du dashboard (reste inchangé)
 const ApprenantDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -741,26 +877,20 @@ const ApprenantDashboard = () => {
               <span className="ml-2">Mon stage</span>
             </div>
           </NavLink>
+
           <NavLink to="mes-livrables" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
-              <FaRegUser className="text-lg sm:text-xl flex-shrink-0" />
+              <BsFileEarmarkText className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Mes Livrables</span>
             </div>
           </NavLink>
 
           <NavLink to="rapport" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
             <div className="flex items-center">
-              <BsFileEarmarkText className="text-lg sm:text-xl flex-shrink-0" />
+              <MdNoteAlt className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Rapport</span>
             </div>
           </NavLink>
-
-          {/* <NavLink to="notes" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-blue-700 shadow-md" : "hover:bg-blue-50 hover:text-blue-700"}`}>
-            <div className="flex items-center">
-              <MdNoteAlt className="text-lg sm:text-xl flex-shrink-0" />
-              <span className="ml-2">Notes</span>
-            </div>
-          </NavLink> */}
         </nav>
       </aside>
 

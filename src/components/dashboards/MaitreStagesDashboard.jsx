@@ -67,7 +67,8 @@ const TableauDeBordHome = () => {
       // Charger les livrables
       let livrablesData = [];
       try {
-        const resLivrables = await api.get("/maitre-stage/livrables");
+        // const resLivrables = await api.get("/maitre-stage/livrables");
+        // const resLivrables = await api.get("/maitre-stage/livrables");
         livrablesData = resLivrables.data.data || resLivrables.data || [];
       } catch (err) {
         console.warn("⚠️ Impossible de charger les livrables:", err);
@@ -621,12 +622,12 @@ const MaitreStagesDashboard = () => {
             </div>
           </NavLink>
 
-          <NavLink to="evaluations" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
+          {/* <NavLink to="evaluations" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
             <div className="flex items-center">
               <BsFileEarmarkText className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Évaluations</span>
             </div>
-          </NavLink>
+          </NavLink> */}
 
           <NavLink to="rapports" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100 text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-blue-700"}`}>
             <div className="flex items-center">

@@ -458,7 +458,7 @@ const TableauDeBordHome = () => {
           </NavLink>
           
           <NavLink 
-            to="stages"
+            to="StageListChefDepartement"
             className="block p-6 bg-orange-50 hover:bg-orange-100 rounded-2xl text-left transition-all hover:shadow-md group"
           >
             <div className="text-orange-600 mb-3">
@@ -613,7 +613,7 @@ const ChefDepartementDashboard = () => {
             </div>
           </NavLink>
 
-          <NavLink to="stages" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100  text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
+          <NavLink to="StageListChefDepartement" className={({ isActive }) => `block py-2 px-3 sm:px-4 rounded text-sm sm:text-base transition-all ${isActive ? "bg-blue-100  text-dégradé shadow-md" : "hover:bg-blue-200 hover:text-dégradé"}`}>
             <div className="flex items-center">
               <SlPeople className="text-lg sm:text-xl flex-shrink-0" />
               <span className="ml-2">Stages</span>
